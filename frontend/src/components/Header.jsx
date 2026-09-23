@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tv, Upload, Download, Moon, Sun, PlusCircle, Volume2, VolumeX } from 'lucide-react';
+import { Tv, Upload, Download, Moon, Sun, PlusCircle, Volume2, VolumeX, Users } from 'lucide-react';
 import { generateLeetcodeTemplate } from '../utils/excelParser';
 
 export function Header({
@@ -42,6 +42,14 @@ export function Header({
 
         {/* Live Clock & Action Controls */}
         <div className="header-actions">
+          {/* Student Count Badge */}
+          {totalCoders > 0 && (
+            <div className="coders-count-badge" title={`${totalCoders} active student coders`}>
+              <Users size={14} />
+              <span>{totalCoders.toLocaleString()} Coders</span>
+            </div>
+          )}
+
           <div className="live-time-chip" title="Live Clock">
             <span className="live-dot"></span>
             <span>{timeStr}</span>

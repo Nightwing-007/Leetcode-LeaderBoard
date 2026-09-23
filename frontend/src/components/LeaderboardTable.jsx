@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, ArrowUpDown, ExternalLink, Edit2, Trash2, Award, Trophy, Zap, Sparkles, Target, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, ArrowUpDown, ExternalLink, Edit2, Trash2, Award, Trophy, Zap, Sparkles, Target, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, SearchX } from 'lucide-react';
 import { COLLEGE_DEPARTMENTS, COLLEGE_BATCHES, GENDER_FILTERS, calculateCompositeScore } from '../data/sampleData';
+import { CustomSelect } from './CustomSelect';
 
 export function LeaderboardTable({
   students,
@@ -231,102 +232,62 @@ export function LeaderboardTable({
           </div>
 
           {/* Department Filter */}
-          <select
-            className="select-dropdown"
+          <CustomSelect
             value={selectedDept}
             onChange={(e) => setSelectedDept(e.target.value)}
-          >
-            {COLLEGE_DEPARTMENTS.map(d => (
-              <option key={d} value={d}>
-                {d === 'All' ? 'All Departments' : `Dept: ${d}`}
-              </option>
-            ))}
-          </select>
+            options={COLLEGE_DEPARTMENTS.map(d => ({ value: d, label: d === 'All' ? 'All Departments' : d }))}
+          />
 
           {/* Batch Filter */}
-          <select
-            className="select-dropdown"
+          <CustomSelect
             value={selectedBatch}
             onChange={(e) => setSelectedBatch(e.target.value)}
-          >
-            {COLLEGE_BATCHES.map(b => (
-              <option key={b} value={b}>
-                {b === 'All' ? 'All Batches' : `Batch: ${b}`}
-              </option>
-            ))}
-          </select>
+            options={COLLEGE_BATCHES.map(b => ({ value: b, label: b === 'All' ? 'All Batches' : b }))}
+          />
 
           {/* Gender Filter */}
-          <select
-            className="select-dropdown"
+          <CustomSelect
             value={selectedGender}
             onChange={(e) => setSelectedGender(e.target.value)}
-          >
-            {GENDER_FILTERS.map(g => (
-              <option key={g} value={g}>
-                {g === 'All' ? 'All Genders' : g}
-              </option>
-            ))}
-          </select>
+            options={GENDER_FILTERS.map(g => ({ value: g, label: g === 'All' ? 'All Genders' : g }))}
+          />
         </div>
 
         {/* Sort By Dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <ArrowUpDown size={16} color="var(--text-light)" />
-          <select
-            className="select-dropdown"
+          <CustomSelect
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-          >
-            {activeTab === 'weekly' && (
-              <>
-                <option value="rank">Sort by: Assessment Score</option>
-                <option value="weekly_rank">Sort by: Assessment Rank</option>
-                <option value="weekly_code">Sort by: Coding Score (4 Programs)</option>
-                <option value="weekly_mcq">Sort by: Aptitude MCQ Score</option>
-              </>
-            )}
-            {activeTab === 'leetcode' && (
-              <>
-                <option value="rank">Sort by: Global Rank</option>
-                <option value="lc_rating">Sort by: Contest Rating</option>
-                <option value="lc_contests">Sort by: Contests Attended</option>
-                <option value="lc_solved">Sort by: Solved Problems</option>
-              </>
-            )}
-            {activeTab === 'pgp' && (
-              <>
-                <option value="rank">Sort by: Total Points</option>
-                <option value="pgp_solved">Sort by: Programs Solved</option>
-                <option value="pgp_dc">Sort by: Daily Challenges (DC)</option>
-                <option value="pgp_rank">Sort by: SkillRack Rank</option>
-              </>
-            )}
-            {activeTab === 'overall' && (
-              <>
-                <option value="rank">Sort by: Overall Composite Rank</option>
-              </>
-            )}
-          </select>
+            options={
+              activeTab === 'weekly' ? [
+                { value: 'rank', label: 'Sort by: Assessment Score' },
+                { value: 'weekly_rank', label: 'Sort by: Assessment Rank' },
+                { value: 'weekly_code', label: 'Sort by: Coding Score (4 Programs)' },
+                { value: 'weekly_mcq', label: 'Sort by: Aptitude MCQ Score' },
+              ] :
+              activeTab === 'leetcode' ? [
+                { value: 'rank', label: 'Sort by: Global Rank' },
+                { value: 'lc_rating', label: 'Sort by: Contest Rating' },
+                { value: 'lc_contests', label: 'Sort by: Contests Attended' },
+                { value: 'lc_solved', label: 'Sort by: Solved Problems' },
+              ] :
+              activeTab === 'pgp' ? [
+                { value: 'rank', label: 'Sort by: Total Points' },
+                { value: 'pgp_solved', label: 'Sort by: Programs Solved' },
+                { value: 'pgp_dc', label: 'Sort by: Daily Challenges (DC)' },
+                { value: 'pgp_rank', label: 'Sort by: SkillRack Rank' },
+              ] : [
+                { value: 'rank', label: 'Sort by: Overall Composite Rank' },
+              ]
+            }
+          />
         </div>
       </div>
 
       {/* Smart Hint Banner if looking at empty tab when other data exists */}
       {activeTab === 'leetcode' && !students.some(s => (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0) > 0) && students.some(s => (s.pgp?.points ?? s.pgpPoints ?? 0) > 0) && (
-        <div style={{
-          background: 'linear-gradient(90deg, #FEF3C7 0%, #FDE68A 100%)',
-          color: '#92400E',
-          border: '1px solid #F59E0B',
-          borderRadius: '10px',
-          padding: '0.75rem 1.25rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.875rem',
-          fontWeight: 600,
-          boxShadow: '0 2px 8px rgba(245, 158, 11, 0.15)'
-        }}>
+        <div className="hint-banner hint-banner-gold">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>⚡ <strong>PGP Report Detected:</strong> Your uploaded records contain PGP / SkillRack scores.</span>
           </div>
@@ -341,19 +302,7 @@ export function LeaderboardTable({
       )}
 
       {activeTab === 'pgp' && !students.some(s => (s.pgp?.points ?? s.pgpPoints ?? 0) > 0) && students.some(s => (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0) > 0) && (
-        <div style={{
-          background: 'linear-gradient(90deg, #EFF6FF 0%, #DBEAFE 100%)',
-          color: '#1E40AF',
-          border: '1px solid #3B82F6',
-          borderRadius: '10px',
-          padding: '0.75rem 1.25rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '0.875rem',
-          fontWeight: 600
-        }}>
+        <div className="hint-banner hint-banner-blue">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span>⚡ <strong>LeetCode Report Detected:</strong> Your uploaded records contain LeetCode contest rankings.</span>
           </div>
@@ -413,12 +362,15 @@ export function LeaderboardTable({
               <th style={{ width: '90px', minWidth: '90px', textAlign: 'center' }}>Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody key={activeTab} className="tab-content-fade">
             {paginatedStudents.length === 0 ? (
               <tr>
-                <td colSpan="10" style={{ textAlign: 'center', padding: '3.5rem 1rem', color: 'var(--text-light)' }}>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '0.35rem' }}>No student records found</div>
-                  <div style={{ fontSize: '0.85rem' }}>Try adjusting your department, batch, gender filters, or search query.</div>
+                <td colSpan="10" className="empty-state">
+                  <div className="empty-state-icon">
+                    <SearchX size={32} color="var(--text-light)" />
+                  </div>
+                  <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-main)', marginBottom: '0.35rem' }}>No student records found</div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', maxWidth: '400px', margin: '0 auto' }}>Try adjusting your department, batch, or gender filters, or modify your search query.</div>
                 </td>
               </tr>
             ) : (
@@ -618,19 +570,7 @@ export function LeaderboardTable({
 
       {/* Instant Pagination Controls Toolbar */}
       {sortedStudents.length > 0 && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem',
-          marginTop: '1.25rem',
-          padding: '0.75rem 1.25rem',
-          background: 'var(--bg-card)',
-          borderRadius: 'var(--radius-md)',
-          border: '1px solid var(--border-color)',
-          fontSize: '0.85rem'
-        }}>
+        <div className="pagination-toolbar">
           {/* Info & Page Size */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', color: 'var(--text-muted)' }}>
             <span>
@@ -680,16 +620,7 @@ export function LeaderboardTable({
                 <ChevronLeft size={16} />
               </button>
 
-              {/* Page indicator pill */}
-              <span style={{
-                padding: '0.35rem 0.85rem',
-                background: 'var(--sece-navy-100)',
-                color: 'var(--sece-navy-800)',
-                fontWeight: 800,
-                borderRadius: '8px',
-                fontFamily: 'var(--font-heading)',
-                fontSize: '0.825rem'
-              }}>
+              <span className="page-indicator">
                 Page {currentPage} of {totalPages}
               </span>
 

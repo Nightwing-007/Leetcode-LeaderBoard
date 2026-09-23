@@ -1,5 +1,5 @@
 import React from 'react';
-import { Award, BarChart2 } from 'lucide-react';
+import { Award, BarChart2, Trophy } from 'lucide-react';
 import { COLLEGE_DEPARTMENTS } from '../data/sampleData';
 
 export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' }) {
@@ -63,10 +63,16 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
     };
   }).filter(Boolean);
 
+  // Sort departments by totalSolved descending for ranking
+  const sortedDeptStats = [...deptStats].sort((a, b) => (b.totalSolved ?? 0) - (a.totalSolved ?? 0));
   const maxTotalSolved = Math.max(...deptStats.map(d => d.totalSolved ?? d.totalMetric ?? 0), 1);
 
   const isWeekly = activeTab === 'weekly';
   const isPgp = activeTab === 'pgp';
+
+  // Build rank map for medal display
+  const deptRankMap = {};
+  sortedDeptStats.forEach((ds, idx) => { deptRankMap[ds.dept] = idx + 1; });
 
   return (
     <section style={{ marginTop: '2.5rem' }}>
@@ -78,55 +84,66 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
       </div>
 
       {/* Grid of Department Champions */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-        {deptStats.map(ds => (
-          <div
-            key={ds.dept}
-            className="stat-card"
-            style={{ flexDirection: 'column', alignItems: 'flex-start', cursor: 'pointer' }}
-            onClick={() => ds.topStudent && onSelectStudent(ds.topStudent)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.75rem' }}>
-              <span className="dept-tag" style={{ fontSize: '0.9rem', padding: '0.35rem 0.75rem' }}>
-                {ds.dept}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
-                {ds.count} Students
-              </span>
-            </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+        {deptStats.map(ds => {
+          const deptRank = deptRankMap[ds.dept];
+          return (
+            <div
+              key={ds.dept}
+              className="dept-champion-card"
+              onClick={() => ds.topStudent && onSelectStudent(ds.topStudent)}
+            >
+              {/* Department rank medal */}
+              {deptRank <= 3 && (
+                <div className={`dept-rank-medal ${deptRank === 1 ? 'gold' : deptRank === 2 ? 'silver' : 'bronze'}`}>
+                  {deptRank === 1 ? '🥇' : deptRank === 2 ? '🥈' : '🥉'}
+                </div>
+              )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--sece-navy-100)', color: 'var(--sece-navy-700)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {ds.topStudent?.name ? ds.topStudent.name.charAt(0) : 'S'}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.75rem' }}>
+                <span className="dept-tag" style={{ fontSize: '0.9rem', padding: '0.35rem 0.75rem' }}>
+                  {ds.dept}
+                </span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  {ds.count} Students
+                </span>
               </div>
-              <div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--sece-gold-600)', fontWeight: 700 }}>#1 Dept Topper</div>
-                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
-                  {ds.topStudent?.name || 'N/A'}
-                </div>
-              </div>
-            </div>
 
-            <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-color)' }}>
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--sece-navy-700)' }}>
-                  {(ds.topScore ?? 0).toLocaleString()}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--sece-navy-100)', color: 'var(--sece-navy-700)', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}>
+                  {ds.topStudent?.name ? ds.topStudent.name.charAt(0) : 'S'}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {ds.metricLabel}
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--sece-gold-600)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                    <Trophy size={12} /> #1 Dept Topper
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
+                    {ds.topStudent?.name || 'N/A'}
+                  </div>
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--sece-gold-600)' }}>
-                  {(ds.avgScore ?? 0).toLocaleString()}
+
+              <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-color)' }}>
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--sece-navy-700)' }}>
+                    {(ds.topScore ?? 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {ds.metricLabel}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
-                  {ds.avgLabel}
+                <div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--sece-gold-600)' }}>
+                    {(ds.avgScore ?? 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    {ds.avgLabel}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Visual Bar Comparison Chart */}
@@ -141,7 +158,7 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
         </h3>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {deptStats.map(ds => {
+          {sortedDeptStats.map(ds => {
             const currentVal = ds.totalSolved ?? ds.totalMetric ?? 0;
             const pct = Math.round((currentVal / maxTotalSolved) * 100);
             return (
@@ -150,14 +167,8 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
                   <span>{ds.dept}</span>
                   <span>{currentVal.toLocaleString()} {isWeekly ? 'problems solved' : 'solved'}</span>
                 </div>
-                <div style={{ width: '100%', height: '12px', background: 'var(--bg-primary)', borderRadius: '6px', overflow: 'hidden' }}>
-                  <div style={{
-                    width: `${pct}%`,
-                    height: '100%',
-                    background: 'linear-gradient(90deg, var(--sece-navy-700) 0%, var(--sece-gold-500) 100%)',
-                    borderRadius: '6px',
-                    transition: 'width 0.8s ease'
-                  }} />
+                <div className="progress-bar-container">
+                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
                 </div>
               </div>
             );

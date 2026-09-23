@@ -1,5 +1,11 @@
 import React from 'react';
 import { Users, Code, Flame, Award, Trophy, Zap, Target } from 'lucide-react';
+import { useCountUp } from '../utils/useCountUp';
+
+function AnimatedValue({ value, suffix = '' }) {
+  const animated = useCountUp(value, 900);
+  return <>{animated.toLocaleString()}{suffix}</>;
+}
 
 export function AnalyticsView({ students, activeTab = 'pgp' }) {
   const totalStudents = students.length;
@@ -32,7 +38,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
             <Users size={24} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">{weeklyCount.toLocaleString()}</div>
+            <div className="stat-value"><AnimatedValue value={weeklyCount} /></div>
             <div className="stat-label">Assessment Candidates</div>
           </div>
         </div>
@@ -43,7 +49,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
           </div>
           <div className="stat-info">
             <div className="stat-value" style={{ color: '#D99B00' }}>
-              {maxWeeklyScore} pts
+              <AnimatedValue value={maxWeeklyScore} suffix=" pts" />
             </div>
             <div className="stat-label">Top Test Score</div>
           </div>
@@ -54,7 +60,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
             <Target size={24} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">{centumScorers}</div>
+            <div className="stat-value"><AnimatedValue value={centumScorers} /></div>
             <div className="stat-label">Centum Achievers (100+)</div>
           </div>
         </div>
@@ -64,7 +70,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
             <Zap size={24} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">{avgWeeklyScore} pts</div>
+            <div className="stat-value"><AnimatedValue value={avgWeeklyScore} suffix=" pts" /></div>
             <div className="stat-label">Avg Assessment Score</div>
           </div>
         </div>
@@ -74,7 +80,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
             <Award size={24} />
           </div>
           <div className="stat-info">
-            <div className="stat-value">{deptsCount}</div>
+            <div className="stat-value"><AnimatedValue value={deptsCount} /></div>
             <div className="stat-label">Active Departments</div>
           </div>
         </div>
@@ -91,7 +97,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
           <Users size={24} />
         </div>
         <div className="stat-info">
-          <div className="stat-value">{totalStudents.toLocaleString()}</div>
+          <div className="stat-value"><AnimatedValue value={totalStudents} /></div>
           <div className="stat-label">Active Student Coders</div>
         </div>
       </div>
@@ -102,7 +108,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
         </div>
         <div className="stat-info">
           <div className="stat-value">
-            {isPgpMode ? totalPgpSolved.toLocaleString() : totalLcSolved.toLocaleString()}
+            <AnimatedValue value={isPgpMode ? totalPgpSolved : totalLcSolved} />
           </div>
           <div className="stat-label">
             {isPgpMode ? 'Programs Solved (PGP)' : 'LeetCode Solved (ALL)'}
@@ -116,7 +122,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
         </div>
         <div className="stat-info">
           <div className="stat-value">
-            {isPgpMode ? maxPoints.toLocaleString() : maxRating}
+            <AnimatedValue value={isPgpMode ? maxPoints : maxRating} />
           </div>
           <div className="stat-label">
             {isPgpMode ? 'Highest PGP Points' : 'Highest Contest Rating'}
@@ -130,7 +136,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
         </div>
         <div className="stat-info">
           <div className="stat-value">
-            {isPgpMode ? `${avgPoints} pts` : totalContests.toLocaleString()}
+            <AnimatedValue value={isPgpMode ? avgPoints : totalContests} suffix={isPgpMode ? ' pts' : ''} />
           </div>
           <div className="stat-label">
             {isPgpMode ? 'Avg Placement Score' : 'Total Contests Attended'}
@@ -143,7 +149,7 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
           <Award size={24} />
         </div>
         <div className="stat-info">
-          <div className="stat-value">{deptsCount}</div>
+          <div className="stat-value"><AnimatedValue value={deptsCount} /></div>
           <div className="stat-label">Active Departments</div>
         </div>
       </div>
