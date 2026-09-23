@@ -254,6 +254,16 @@ export default function App() {
         onSave={handleSaveStudent}
         studentToEdit={studentToEdit}
       />
+
+      {/* Footer */}
+      <footer className="app-footer">
+        <p style={{ fontWeight: 700, color: 'var(--text-muted)' }}>
+          Sri Eshwar College of Engineering • Department of Technical Training
+        </p>
+        <p style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
+          Coding Leaderboard Portal — LeetCode • SkillRack • Weekly Assessments
+        </p>
+      </footer>
     </div>
   );
 }

@@ -33,7 +33,7 @@ export function StudentModal({ student, onClose }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px', maxHeight: '90vh', overflowY: 'auto' }}>
         {/* Modal Header */}
-        <div className="modal-header" style={{ background: 'var(--sece-navy-900)', color: '#FFF' }}>
+        <div className="modal-header premium-header" style={{ color: '#FFF' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <div style={{ width: '52px', height: '52px', borderRadius: '50%', background: '#FFB800', color: '#002855', fontWeight: 900, fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {student.name ? student.name.charAt(0) : 'S'}
@@ -60,7 +60,7 @@ export function StudentModal({ student, onClose }) {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                 {badges.map((b, i) => (
-                  <span key={i} style={{ background: 'var(--sece-navy-100)', color: 'var(--sece-navy-800)', border: `1px solid ${b.color}`, padding: '0.3rem 0.7rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span key={i} className="badge-animated" style={{ background: 'var(--sece-navy-100)', color: 'var(--sece-navy-800)', border: `1px solid ${b.color}`, padding: '0.3rem 0.7rem', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <Star size={14} color={b.color} />
                     {b.title}
                   </span>

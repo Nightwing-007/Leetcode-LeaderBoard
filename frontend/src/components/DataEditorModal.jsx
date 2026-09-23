@@ -91,12 +91,12 @@ export function DataEditorModal({ isOpen, onClose, onSave, studentToEdit }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
-        <div className="modal-header">
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="modal-header premium-header" style={{ color: '#FFF' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#FFF' }}>
             {studentToEdit ? <Edit3 size={20} /> : <Plus size={20} />}
             <span>{studentToEdit ? 'Edit Coder Profile' : 'Add New Student Coder'}</span>
           </h3>
-          <button className="btn btn-outline" style={{ padding: '0.35rem' }} onClick={onClose}>
+          <button className="btn btn-navy" style={{ padding: '0.35rem' }} onClick={onClose}>
             <X size={18} />
           </button>
         </div>

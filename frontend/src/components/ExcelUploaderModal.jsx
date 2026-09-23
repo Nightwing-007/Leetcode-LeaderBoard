@@ -85,12 +85,12 @@ export function ExcelUploaderModal({ isOpen, onClose, onUploadSuccess, currentSt
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '640px' }}>
-        <div className="modal-header">
+        <div className="modal-header premium-header" style={{ color: '#FFF' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <FileSpreadsheet size={24} color="var(--sece-navy-700)" />
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Import Coding &amp; Placement Reports</h3>
+            <FileSpreadsheet size={24} color="#FFC72C" />
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#FFF' }}>Import Coding &amp; Placement Reports</h3>
           </div>
-          <button className="btn btn-outline" style={{ padding: '0.35rem' }} onClick={onClose}>
+          <button className="btn btn-navy" style={{ padding: '0.35rem' }} onClick={onClose}>
             <X size={18} />
           </button>
         </div>
@@ -148,8 +148,9 @@ export function ExcelUploaderModal({ isOpen, onClose, onUploadSuccess, currentSt
 
           {/* Status Indicators */}
           {loading && (
-            <div style={{ textAlign: 'center', marginTop: '1.25rem', color: 'var(--sece-navy-700)', fontWeight: 700 }}>
-              Processing Excel sheets and updating records...
+            <div className="loading-spinner-wrapper">
+              <div className="loading-spinner"></div>
+              <span>Processing Excel sheets and updating records...</span>
             </div>
           )}
 
