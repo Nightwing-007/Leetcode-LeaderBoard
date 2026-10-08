@@ -1,4 +1,10 @@
-import * as XLSX from 'xlsx';
+let xlsxModule = null;
+async function getXLSX() {
+  if (!xlsxModule) {
+    xlsxModule = await import('xlsx');
+  }
+  return xlsxModule;
+}
 
 /**
  * Parses uploaded Excel files (both PGP Report and LeetCode Report sheets)
@@ -7,8 +13,9 @@ export function parseExcelData(file, existingStudents = []) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
+        const XLSX = await getXLSX();
         const data = new Uint8Array(e.target.result);
         const workbook = XLSX.read(data, { type: 'array' });
         
@@ -356,7 +363,8 @@ export function normalizeDept(deptStr) {
   return d || 'CSE';
 }
 
-export function generateLeetcodeTemplate() {
+export async function generateLeetcodeTemplate() {
+  const XLSX = await getXLSX();
   const wb = XLSX.utils.book_new();
   const sampleData = [
     {

@@ -1,77 +1,91 @@
--- =============================================================================
--- Sri Eshwar College of Engineering - Coding & PGP Leaderboard Database Schema
--- Database: PostgreSQL
--- =============================================================================
+CREATE TABLE IF NOT EXISTS coding_platforms (
+    id SERIAL PRIMARY KEY,
+    platform_name VARCHAR(50) UNIQUE NOT NULL,
+    weight_percentage NUMERIC(5,2) DEFAULT 20.00,
+    is_active BOOLEAN DEFAULT TRUE
+);
 
--- 1. Core Students Table
+INSERT INTO coding_platforms (platform_name, weight_percentage) VALUES 
+    ('LeetCode', 20.00), ('SkillRack', 20.00), ('AtCoder', 20.00), ('Codeforces', 20.00), ('Degre.AI', 20.00)
+ON CONFLICT (platform_name) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS students (
     id BIGSERIAL PRIMARY KEY,
-    roll_no VARCHAR(50) UNIQUE NOT NULL,
+    register_number VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(150) NOT NULL,
-    department_code VARCHAR(20) NOT NULL,
-    batch_year VARCHAR(20) NOT NULL,
-    section VARCHAR(20),
-    sub_batch VARCHAR(30),
-    gender VARCHAR(10) DEFAULT 'Male',
+    academic_year INT NOT NULL CHECK (academic_year IN (1, 2, 3, 4)),
+    department VARCHAR(50) NOT NULL,
+    section VARCHAR(10),
+    batch VARCHAR(20) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_students_roll_no ON students(roll_no);
-CREATE INDEX IF NOT EXISTS idx_students_dept ON students(department_code);
-CREATE INDEX IF NOT EXISTS idx_students_batch ON students(batch_year);
-
--- 2. LeetCode Profiles Table
-CREATE TABLE IF NOT EXISTS leetcode_profiles (
+CREATE TABLE IF NOT EXISTS platform_accounts (
     id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT UNIQUE NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    leetcode_username VARCHAR(100),
-    global_rank BIGINT DEFAULT 999999,
-    contest_rating NUMERIC(8, 2) DEFAULT 1500.00,
-    contests_attended INT DEFAULT 0,
-    top_percentage VARCHAR(20) DEFAULT 'N/A',
-    solved_total INT DEFAULT 0,
-    solved_easy INT DEFAULT 0,
-    solved_medium INT DEFAULT 0,
-    solved_hard INT DEFAULT 0,
-    last_synced_at TIMESTAMP WITH TIME ZONE,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
+    platform_id INT REFERENCES coding_platforms(id) ON DELETE CASCADE,
+    platform_username VARCHAR(150) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, platform_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_lc_global_rank ON leetcode_profiles(global_rank ASC);
-CREATE INDEX IF NOT EXISTS idx_lc_contest_rating ON leetcode_profiles(contest_rating DESC);
-CREATE INDEX IF NOT EXISTS idx_lc_solved_total ON leetcode_profiles(solved_total DESC);
-
--- 3. PGP / SkillRack Scores Table
-CREATE TABLE IF NOT EXISTS pgp_scores (
+CREATE TABLE IF NOT EXISTS platform_performance (
     id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT UNIQUE NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    programs_solved INT DEFAULT 0,
-    code_tests INT DEFAULT 0,
-    code_tracks INT DEFAULT 0,
-    code_tutor INT DEFAULT 0,
-    dc INT DEFAULT 0,
-    dt INT DEFAULT 0,
-    aptitude_score INT DEFAULT 0,
-    total_points INT DEFAULT 0,
-    skillrack_rank BIGINT DEFAULT 0,
-    report_date DATE,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
+    platform_id INT REFERENCES coding_platforms(id) ON DELETE CASCADE,
+    problems_solved INT DEFAULT 0,
+    rating NUMERIC(10,2) DEFAULT 0,
+    assessment_score NUMERIC(10,2) DEFAULT 0,
+    global_rank BIGINT,
+    assessment_rank BIGINT,
+    contest_rating NUMERIC(10,2) DEFAULT 0,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (student_id, platform_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_pgp_total_points ON pgp_scores(total_points DESC);
-CREATE INDEX IF NOT EXISTS idx_pgp_skillrack_rank ON pgp_scores(skillrack_rank ASC);
-
--- 4. Daily / Weekly Ranking Snapshots Table
-CREATE TABLE IF NOT EXISTS ranking_snapshots (
+CREATE TABLE IF NOT EXISTS assessments (
     id BIGSERIAL PRIMARY KEY,
-    student_id BIGINT NOT NULL REFERENCES students(id) ON DELETE CASCADE,
-    snapshot_date DATE NOT NULL,
-    lc_global_rank BIGINT,
-    lc_contest_rating NUMERIC(8, 2),
-    lc_solved_total INT,
-    pgp_points INT,
-    skillrack_rank BIGINT
+    student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
+    platform_id INT REFERENCES coding_platforms(id) ON DELETE CASCADE,
+    assessment_name VARCHAR(150) NOT NULL,
+    assessment_date DATE NOT NULL,
+    score NUMERIC(10,2),
+    rating NUMERIC(10,2),
+    rank BIGINT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_snapshots_date_student ON ranking_snapshots(snapshot_date, student_id);
+CREATE INDEX IF NOT EXISTS idx_students_reg_no ON students(register_number);
+CREATE INDEX IF NOT EXISTS idx_students_dept ON students(department);
+CREATE INDEX IF NOT EXISTS idx_students_year ON students(academic_year);
+CREATE INDEX IF NOT EXISTS idx_students_section ON students(section);
+CREATE INDEX IF NOT EXISTS idx_students_composite ON students(department, academic_year, section);
+CREATE INDEX IF NOT EXISTS idx_perf_student_platform ON platform_performance(student_id, platform_id);
+
+CREATE OR REPLACE VIEW v_student_overall_scores AS
+WITH platform_max_min AS (
+    SELECT platform_id, NULLIF(MAX(problems_solved + rating + assessment_score), 0) as max_val, MIN(problems_solved + rating + assessment_score) as min_val
+    FROM platform_performance GROUP BY platform_id
+),
+normalized_performance AS (
+    SELECT pp.student_id, pp.platform_id, cp.weight_percentage,
+        COALESCE((((pp.problems_solved + pp.rating + pp.assessment_score) - pmm.min_val) / (pmm.max_val - pmm.min_val)) * (cp.weight_percentage), 0) AS weighted_score
+    FROM platform_performance pp
+    JOIN coding_platforms cp ON pp.platform_id = cp.id
+    JOIN platform_max_min pmm ON pp.platform_id = pmm.platform_id
+)
+SELECT s.id AS student_id, s.register_number, s.name, s.academic_year, s.department, s.section, COALESCE(SUM(np.weighted_score), 0) AS overall_score
+FROM students s LEFT JOIN normalized_performance np ON s.id = np.student_id GROUP BY s.id;
+
+CREATE OR REPLACE VIEW v_rank_college_toppers AS SELECT RANK() OVER (ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
+CREATE OR REPLACE VIEW v_rank_year_toppers AS SELECT RANK() OVER (PARTITION BY academic_year ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
+CREATE OR REPLACE VIEW v_rank_department_toppers AS SELECT RANK() OVER (PARTITION BY department ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
+CREATE OR REPLACE VIEW v_rank_department_year_toppers AS SELECT RANK() OVER (PARTITION BY department, academic_year ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
+CREATE OR REPLACE VIEW v_rank_class_toppers AS
+WITH ranked_classes AS (
+    SELECT RANK() OVER (PARTITION BY department, academic_year, section ORDER BY overall_score DESC) as class_rank,
+    COUNT(*) OVER (PARTITION BY department, academic_year, section) as class_size,
+    student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores
+)
+SELECT class_rank, student_id, register_number, name, department, academic_year, section, overall_score, class_size, ROUND(((class_size - class_rank) / class_size::numeric) * 100, 2) AS percentile FROM ranked_classes;

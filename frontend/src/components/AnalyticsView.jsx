@@ -7,19 +7,23 @@ function AnimatedValue({ value, suffix = '' }) {
   return <>{animated.toLocaleString()}{suffix}</>;
 }
 
-export function AnalyticsView({ students, activeTab = 'pgp' }) {
-  const totalStudents = students.length;
+export function AnalyticsView({ students, activeTab = 'college', dashboardStats = null }) {
+  const totalStudents = dashboardStats?.totalStudents ?? students.length;
   
   // LeetCode Stats
-  const totalLcSolved = students.reduce((sum, s) => sum + (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0), 0);
-  const maxRating = Math.max(...students.map(s => s.leetcode?.contestRating ?? s.lcContestRating ?? 0), 0);
-  const totalContests = students.reduce((sum, s) => sum + (s.leetcode?.contestAttended ?? s.lcContestsAttended ?? 0), 0);
+  const totalLcSolved = dashboardStats?.totalLeetCodeSolved ?? students.reduce((sum, s) => sum + (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0), 0);
+  const maxRating = dashboardStats?.highestContestRating != null ? Number(dashboardStats.highestContestRating) : Math.max(...students.map(s => s.leetcode?.contestRating ?? s.lcContestRating ?? 0), 0);
+  const totalContests = dashboardStats?.totalContestsAttended ?? students.reduce((sum, s) => sum + (s.leetcode?.contestAttended ?? s.lcContestsAttended ?? 0), 0);
 
   // PGP Stats
   const totalPgpSolved = students.reduce((sum, s) => sum + (s.pgp?.programsSolved ?? s.pgpProgramsSolved ?? 0), 0);
-  const maxPoints = Math.max(...students.map(s => s.pgp?.points ?? s.pgpPoints ?? 0), 0);
+  const maxPoints = dashboardStats?.maxPgpPoints ?? Math.max(...students.map(s => s.pgp?.points ?? s.pgpPoints ?? 0), 0);
   const totalPointsSum = students.reduce((sum, s) => sum + (s.pgp?.points ?? s.pgpPoints ?? 0), 0);
-  const avgPoints = totalStudents > 0 ? Math.round(totalPointsSum / totalStudents) : 0;
+  const avgPoints = dashboardStats?.avgPgpPoints ? Math.round(dashboardStats.avgPgpPoints) : (totalStudents > 0 ? Math.round(totalPointsSum / totalStudents) : 0);
+
+  // V2 Metrics
+  const highestOverallScore = dashboardStats?.highestOverallScore != null ? Number(dashboardStats.highestOverallScore) : Math.max(...students.map(s => s.overallScore ?? s.compositeScore ?? 0), 0);
+  const activePlatforms = dashboardStats?.activePlatformsCount ?? (dashboardStats?.activePlatforms?.length ?? 5);
 
   // Weekly Assessment Stats
   const weeklyStudents = students.filter(s => (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) > 0);
@@ -122,24 +126,36 @@ export function AnalyticsView({ students, activeTab = 'pgp' }) {
         </div>
         <div className="stat-info">
           <div className="stat-value">
-            <AnimatedValue value={isPgpMode ? maxPoints : maxRating} />
+            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) && highestOverallScore > 0 ? (
+              <AnimatedValue value={Math.round(highestOverallScore)} suffix=" pts" />
+            ) : (
+              <AnimatedValue value={isPgpMode ? maxPoints : maxRating} />
+            )}
           </div>
           <div className="stat-label">
-            {isPgpMode ? 'Highest PGP Points' : 'Highest Contest Rating'}
+            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) && highestOverallScore > 0
+              ? 'Top Composite Score'
+              : (isPgpMode ? 'Highest PGP Points' : 'Highest Contest Rating')}
           </div>
         </div>
       </div>
 
       <div className="stat-card">
         <div className="stat-icon-wrapper">
-          {isPgpMode ? <Target size={24} /> : <Trophy size={24} />}
+          {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) ? <Trophy size={24} /> : (isPgpMode ? <Target size={24} /> : <Trophy size={24} />)}
         </div>
         <div className="stat-info">
           <div className="stat-value">
-            <AnimatedValue value={isPgpMode ? avgPoints : totalContests} suffix={isPgpMode ? ' pts' : ''} />
+            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) ? (
+              <AnimatedValue value={activePlatforms} suffix=" Connected" />
+            ) : (
+              <AnimatedValue value={isPgpMode ? avgPoints : totalContests} suffix={isPgpMode ? ' pts' : ''} />
+            )}
           </div>
           <div className="stat-label">
-            {isPgpMode ? 'Avg Placement Score' : 'Total Contests Attended'}
+            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)
+              ? 'Active Coding Platforms'
+              : (isPgpMode ? 'Avg Placement Score' : 'Total Contests Attended')}
           </div>
         </div>
       </div>

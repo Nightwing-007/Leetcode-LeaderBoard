@@ -80,6 +80,39 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
       );
     }
 
+    // Institutional Topper Views (College, Year, Dept, Class)
+    if (['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)) {
+      const compScore = student.overallScore != null ? Number(student.overallScore) : (student.compositeScore ?? 0);
+      const lcSolved = student.leetcode?.solvedTotal ?? student.lcSolvedTotal ?? 0;
+      const pgpPts = student.pgp?.points ?? student.pgpPoints ?? 0;
+      const rankNum = student.rank || (isFirst ? 1 : null);
+
+      return (
+        <div className="podium-stats-grid">
+          <div className="p-stat" style={isFirst ? { background: 'rgba(255, 184, 0, 0.15)' } : {}}>
+            <div className="val" style={isFirst ? { color: '#D99B00', fontSize: '1.25rem' } : {}}>
+              ⭐ {Math.round(compScore).toLocaleString()}
+            </div>
+            <div className="lbl">Composite Score</div>
+          </div>
+          <div className="p-stat" style={isFirst ? { background: 'rgba(0, 51, 102, 0.1)' } : {}}>
+            <div className="val" style={isFirst ? { color: '#003366', fontSize: '1.15rem' } : {}}>
+              {rankNum ? `#${rankNum}` : 'Topper'}
+            </div>
+            <div className="lbl">Topper Rank</div>
+          </div>
+          <div className="p-stat">
+            <div className="val">{lcSolved} LC</div>
+            <div className="lbl">LeetCode Solved</div>
+          </div>
+          <div className="p-stat">
+            <div className="val">{pgpPts > 0 ? `${pgpPts.toLocaleString()} pts` : '—'}</div>
+            <div className="lbl">PGP Score</div>
+          </div>
+        </div>
+      );
+    }
+
     // LeetCode / Default
     const solved = student.leetcode?.solvedTotal ?? student.lcSolvedTotal ?? 0;
     const rating = student.leetcode?.contestRating ?? student.lcContestRating ?? 1500;

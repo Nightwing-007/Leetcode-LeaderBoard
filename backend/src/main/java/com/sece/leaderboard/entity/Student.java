@@ -4,13 +4,15 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "students", indexes = {
-        @Index(name = "idx_students_roll_no", columnList = "roll_no"),
-        @Index(name = "idx_students_dept", columnList = "department_code"),
-        @Index(name = "idx_students_batch", columnList = "batch_year")
+        @Index(name = "idx_students_reg_no", columnList = "register_number"),
+        @Index(name = "idx_students_dept", columnList = "department"),
+        @Index(name = "idx_students_year", columnList = "academic_year"),
+        @Index(name = "idx_students_section", columnList = "section"),
+        @Index(name = "idx_students_composite", columnList = "department, academic_year, section")
 })
 public class Student {
 
@@ -18,113 +20,112 @@ public class Student {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "roll_no", unique = true, nullable = false, length = 50)
-    private String rollNo;
+    @Column(name = "register_number", unique = true, nullable = false, length = 50)
+    private String registerNumber;
 
     @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(name = "department_code", nullable = false, length = 20)
-    private String departmentCode;
+    @Column(name = "academic_year", nullable = false)
+    private Integer academicYear;
 
-    @Column(name = "batch_year", nullable = false, length = 20)
-    private String batchYear;
-
-    @Column(length = 20)
-    private String section;
-
-    @Column(name = "sub_batch", length = 30)
-    private String subBatch;
+    @Column(nullable = false, length = 50)
+    private String department;
 
     @Column(length = 10)
-    private String gender = "Male";
+    private String section;
 
-    @Column(name = "weekly_score")
-    private Integer weeklyScore;
-
-    @Column(name = "weekly_rank")
-    private Integer weeklyRank;
-
-    @Column(name = "weekly_code_score")
-    private Integer weeklyCodeScore;
-
-    @Column(name = "weekly_mcq_score")
-    private Integer weeklyMcqScore;
-
-    @Column(name = "weekly_test_name", length = 150)
-    private String weeklyTestName;
-
-    @OneToOne(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private LeetCodeProfile leetCodeProfile;
-
-    @OneToOne(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private PgpScore pgpScore;
+    @Column(nullable = false, length = 20)
+    private String batch;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
+    private ZonedDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private ZonedDateTime updatedAt;
 
     public Student() {}
 
-    public Student(String rollNo, String name, String departmentCode, String batchYear, String section, String subBatch, String gender) {
-        this.rollNo = rollNo;
+    public Student(String registerNumber, String name, Integer academicYear, String department, String section, String batch) {
+        this.registerNumber = registerNumber;
         this.name = name;
-        this.departmentCode = departmentCode;
-        this.batchYear = batchYear;
+        this.academicYear = academicYear;
+        this.department = department;
         this.section = section;
-        this.subBatch = subBatch;
-        this.gender = gender != null ? gender : "Male";
+        this.batch = batch;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getRollNo() { return rollNo; }
-    public void setRollNo(String rollNo) { this.rollNo = rollNo; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    public String getRegisterNumber() {
+        return registerNumber;
+    }
 
-    public String getDepartmentCode() { return departmentCode; }
-    public void setDepartmentCode(String departmentCode) { this.departmentCode = departmentCode; }
+    public void setRegisterNumber(String registerNumber) {
+        this.registerNumber = registerNumber;
+    }
 
-    public String getBatchYear() { return batchYear; }
-    public void setBatchYear(String batchYear) { this.batchYear = batchYear; }
+    public String getName() {
+        return name;
+    }
 
-    public String getSection() { return section; }
-    public void setSection(String section) { this.section = section; }
+    public void setName(String name) {
+        this.name = name;
+    }
 
-    public String getSubBatch() { return subBatch; }
-    public void setSubBatch(String subBatch) { this.subBatch = subBatch; }
+    public Integer getAcademicYear() {
+        return academicYear;
+    }
 
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
+    public void setAcademicYear(Integer academicYear) {
+        this.academicYear = academicYear;
+    }
 
-    public Integer getWeeklyScore() { return weeklyScore; }
-    public void setWeeklyScore(Integer weeklyScore) { this.weeklyScore = weeklyScore; }
+    public String getDepartment() {
+        return department;
+    }
 
-    public Integer getWeeklyRank() { return weeklyRank; }
-    public void setWeeklyRank(Integer weeklyRank) { this.weeklyRank = weeklyRank; }
+    public void setDepartment(String department) {
+        this.department = department;
+    }
 
-    public Integer getWeeklyCodeScore() { return weeklyCodeScore; }
-    public void setWeeklyCodeScore(Integer weeklyCodeScore) { this.weeklyCodeScore = weeklyCodeScore; }
+    public String getSection() {
+        return section;
+    }
 
-    public Integer getWeeklyMcqScore() { return weeklyMcqScore; }
-    public void setWeeklyMcqScore(Integer weeklyMcqScore) { this.weeklyMcqScore = weeklyMcqScore; }
+    public void setSection(String section) {
+        this.section = section;
+    }
 
-    public String getWeeklyTestName() { return weeklyTestName; }
-    public void setWeeklyTestName(String weeklyTestName) { this.weeklyTestName = weeklyTestName; }
+    public String getBatch() {
+        return batch;
+    }
 
-    public LeetCodeProfile getLeetCodeProfile() { return leetCodeProfile; }
-    public void setLeetCodeProfile(LeetCodeProfile leetCodeProfile) { this.leetCodeProfile = leetCodeProfile; }
+    public void setBatch(String batch) {
+        this.batch = batch;
+    }
 
-    public PgpScore getPgpScore() { return pgpScore; }
-    public void setPgpScore(PgpScore pgpScore) { this.pgpScore = pgpScore; }
+    public ZonedDateTime getCreatedAt() {
+        return createdAt;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setCreatedAt(ZonedDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public ZonedDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(ZonedDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

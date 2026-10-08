@@ -4,13 +4,19 @@ import java.math.BigDecimal;
 
 public class LeaderboardRowDto {
     private Long id;
-    private Integer rank;
+    private Long rank;
     private String rollNo;
     private String name;
     private String department;
     private String batch;
     private String section;
+    private Integer academicYear;
     private String gender;
+
+    // View-Engine Pre-calculated Scoring & Class Metrics
+    private BigDecimal overallScore;
+    private Long classSize;
+    private BigDecimal percentile;
 
     // LeetCode Fields
     private String leetcodeId;
@@ -41,7 +47,7 @@ public class LeaderboardRowDto {
     private Integer weeklyMcqScore;
     private String weeklyTestName;
 
-    // Composite Score
+    // Composite Score (Backwards compatible alias for overallScore)
     private Long compositeScore;
 
     public LeaderboardRowDto() {}
@@ -49,8 +55,9 @@ public class LeaderboardRowDto {
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
-    public Integer getRank() { return rank; }
-    public void setRank(Integer rank) { this.rank = rank; }
+    public Long getRank() { return rank; }
+    public void setRank(Long rank) { this.rank = rank; }
+    public void setRank(Integer rank) { this.rank = rank != null ? rank.longValue() : null; }
 
     public String getRollNo() { return rollNo; }
     public void setRollNo(String rollNo) { this.rollNo = rollNo; }
@@ -67,8 +74,25 @@ public class LeaderboardRowDto {
     public String getSection() { return section; }
     public void setSection(String section) { this.section = section; }
 
+    public Integer getAcademicYear() { return academicYear; }
+    public void setAcademicYear(Integer academicYear) { this.academicYear = academicYear; }
+
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
+
+    public BigDecimal getOverallScore() { return overallScore; }
+    public void setOverallScore(BigDecimal overallScore) {
+        this.overallScore = overallScore;
+        if (overallScore != null && this.compositeScore == null) {
+            this.compositeScore = overallScore.longValue();
+        }
+    }
+
+    public Long getClassSize() { return classSize; }
+    public void setClassSize(Long classSize) { this.classSize = classSize; }
+
+    public BigDecimal getPercentile() { return percentile; }
+    public void setPercentile(BigDecimal percentile) { this.percentile = percentile; }
 
     public String getLeetcodeId() { return leetcodeId; }
     public void setLeetcodeId(String leetcodeId) { this.leetcodeId = leetcodeId; }
@@ -139,6 +163,13 @@ public class LeaderboardRowDto {
     public String getWeeklyTestName() { return weeklyTestName; }
     public void setWeeklyTestName(String weeklyTestName) { this.weeklyTestName = weeklyTestName; }
 
-    public Long getCompositeScore() { return compositeScore; }
-    public void setCompositeScore(Long compositeScore) { this.compositeScore = compositeScore; }
+    public Long getCompositeScore() {
+        if (compositeScore != null) return compositeScore;
+        if (overallScore != null) return overallScore.longValue();
+        return 0L;
+    }
+
+    public void setCompositeScore(Long compositeScore) {
+        this.compositeScore = compositeScore;
+    }
 }

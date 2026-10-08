@@ -10,8 +10,15 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+/**
+ * Controller for Institutional Analytics and Dashboard Statistics.
+ * Endpoints:
+ * - GET /api/v1/analytics/summary
+ * - GET /api/v1/analytics/statistics
+ * - GET /api/v1/analytics/department-comparison
+ * - GET /api/v1/dashboard/statistics
+ */
 @RestController
-@RequestMapping("/api/v1/analytics")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
@@ -20,12 +27,12 @@ public class AnalyticsController {
         this.analyticsService = analyticsService;
     }
 
-    @GetMapping("/summary")
+    @GetMapping({"/api/v1/analytics/summary", "/api/v1/analytics/statistics", "/api/v1/dashboard/statistics"})
     public ResponseEntity<AnalyticsSummaryDto> getSummary() {
         return ResponseEntity.ok(analyticsService.getSummary());
     }
 
-    @GetMapping("/department-comparison")
+    @GetMapping("/api/v1/analytics/department-comparison")
     public ResponseEntity<List<DepartmentStatsDto>> getDepartmentComparisons() {
         return ResponseEntity.ok(analyticsService.getDepartmentComparisons());
     }

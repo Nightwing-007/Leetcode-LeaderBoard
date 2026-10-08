@@ -13,7 +13,9 @@ export const COLLEGE_DEPARTMENTS = [
   "MECH"
 ];
 
-export const COLLEGE_BATCHES = ["All", "2023-2027", "2024-2028", "2025-2029"];
+export const COLLEGE_BATCHES = ["All", "2023-2027", "2024-2028", "2025-2029", "2026-2030"];
+export const ACADEMIC_YEARS = ["All", "1", "2", "3", "4"];
+export const COLLEGE_SECTIONS = ["All", "A", "B", "C", "D"];
 export const GENDER_FILTERS = ["All", "Male", "Female"];
 
 export const INITIAL_STUDENTS_DATA = [

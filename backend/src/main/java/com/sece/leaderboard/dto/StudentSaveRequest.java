@@ -19,6 +19,7 @@ public class StudentSaveRequest {
     private String section;
     private String subBatch;
     private String gender = "Male";
+    private Integer academicYear;
 
     // LeetCode
     private String leetcodeId;
@@ -31,7 +32,7 @@ public class StudentSaveRequest {
     private Integer solvedMedium;
     private Integer solvedHard;
 
-    // PGP
+    // PGP / SkillRack
     private Integer programsSolved;
     private Integer codeTests;
     private Integer codeTracks;
@@ -41,6 +42,21 @@ public class StudentSaveRequest {
     private Integer aptitudeScore;
     private Integer points;
     private Long skillrackRank;
+
+    // AtCoder
+    private String atcoderId;
+    private BigDecimal atcoderRating;
+    private Integer atcoderSolved;
+
+    // Codeforces
+    private String codeforcesId;
+    private BigDecimal codeforcesRating;
+    private Integer codeforcesSolved;
+
+    // Degre.AI
+    private String degreId;
+    private BigDecimal degreScore;
+    private Integer degreSolved;
 
     public StudentSaveRequest() {}
 
@@ -67,6 +83,9 @@ public class StudentSaveRequest {
 
     public String getGender() { return gender; }
     public void setGender(String gender) { this.gender = gender; }
+
+    public Integer getAcademicYear() { return academicYear; }
+    public void setAcademicYear(Integer academicYear) { this.academicYear = academicYear; }
 
     public String getLeetcodeId() { return leetcodeId; }
     public void setLeetcodeId(String leetcodeId) { this.leetcodeId = leetcodeId; }
@@ -121,4 +140,31 @@ public class StudentSaveRequest {
 
     public Long getSkillrackRank() { return skillrackRank; }
     public void setSkillrackRank(Long skillrackRank) { this.skillrackRank = skillrackRank; }
+
+    public String getAtcoderId() { return atcoderId; }
+    public void setAtcoderId(String atcoderId) { this.atcoderId = atcoderId; }
+
+    public BigDecimal getAtcoderRating() { return atcoderRating; }
+    public void setAtcoderRating(BigDecimal atcoderRating) { this.atcoderRating = atcoderRating; }
+
+    public Integer getAtcoderSolved() { return atcoderSolved; }
+    public void setAtcoderSolved(Integer atcoderSolved) { this.atcoderSolved = atcoderSolved; }
+
+    public String getCodeforcesId() { return codeforcesId; }
+    public void setCodeforcesId(String codeforcesId) { this.codeforcesId = codeforcesId; }
+
+    public BigDecimal getCodeforcesRating() { return codeforcesRating; }
+    public void setCodeforcesRating(BigDecimal codeforcesRating) { this.codeforcesRating = codeforcesRating; }
+
+    public Integer getCodeforcesSolved() { return codeforcesSolved; }
+    public void setCodeforcesSolved(Integer codeforcesSolved) { this.codeforcesSolved = codeforcesSolved; }
+
+    public String getDegreId() { return degreId; }
+    public void setDegreId(String degreId) { this.degreId = degreId; }
+
+    public BigDecimal getDegreScore() { return degreScore; }
+    public void setDegreScore(BigDecimal degreScore) { this.degreScore = degreScore; }
+
+    public Integer getDegreSolved() { return degreSolved; }
+    public void setDegreSolved(Integer degreSolved) { this.degreSolved = degreSolved; }
 }
