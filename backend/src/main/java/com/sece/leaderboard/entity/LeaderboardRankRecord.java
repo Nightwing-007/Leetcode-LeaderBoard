@@ -14,4 +14,5 @@ public interface LeaderboardRankRecord {
     Integer getAcademicYear();
     String getSection();
     BigDecimal getOverallScore();
+    String getCategory();
 }

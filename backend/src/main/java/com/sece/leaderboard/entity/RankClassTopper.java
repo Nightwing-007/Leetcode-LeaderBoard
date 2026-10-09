@@ -43,6 +43,9 @@ public class RankClassTopper implements LeaderboardRankRecord {
     @Column(name = "overall_score")
     private BigDecimal overallScore;
 
+    @Column(name = "category")
+    private String category;
+
     @Column(name = "class_size")
     private Long classSize;
 
@@ -145,5 +148,14 @@ public class RankClassTopper implements LeaderboardRankRecord {
 
     public void setPercentile(BigDecimal percentile) {
         this.percentile = percentile;
+    }
+
+    @Override
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

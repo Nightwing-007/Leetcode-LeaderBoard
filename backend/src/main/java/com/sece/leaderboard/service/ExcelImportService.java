@@ -16,6 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -88,6 +89,7 @@ public class ExcelImportService {
                 String testName = extractTestName(rawCodeHeader, sheetName);
                 String inferredBatch = inferBatchFromSheet(sheetName);
                 int inferredAcademicYear = determineAcademicYear(null, inferredBatch, sheetName);
+                List<Integer> degreAssessmentCols = findDegreAssessmentColumns(headerRow, colMap, sheetName);
 
                 for (int r = headerRowNum + 1; r <= sheet.getLastRowNum(); r++) {
                     Row row = sheet.getRow(r);
@@ -140,7 +142,7 @@ public class ExcelImportService {
 
                         // 3. Platform Performance Isolation
                         boolean performanceUpdated = updatePlatformPerformance(
-                                student, row, colMap, sheetPlatform, testName
+                                student, row, colMap, sheetPlatform, testName, degreAssessmentCols
                         );
 
                         if (performanceUpdated) {
@@ -182,7 +184,7 @@ public class ExcelImportService {
      * Guarantees that updating a student's LeetCode data leaves SkillRack or Degre.AI untouched.
      */
     private boolean updatePlatformPerformance(Student student, Row row, Map<String, Integer> colMap,
-                                              String sheetPlatform, String testName) {
+                                              String sheetPlatform, String testName, List<Integer> degreAssessmentCols) {
         boolean updated = false;
 
         // --- A. LEETCODE PLATFORM ---
@@ -274,13 +276,134 @@ public class ExcelImportService {
             updated = true;
         }
 
+        // --- D. DEGRE.AI PLATFORM (AVERAGE OF VARIABLE WEEKLY ASSESSMENTS 2 TO 6) ---
+        if ("Degre.AI".equalsIgnoreCase(sheetPlatform) || (degreAssessmentCols != null && !degreAssessmentCols.isEmpty()) || colMap.containsKey("DEGRE_AVG") || colMap.containsKey("DEGRE_SCORE")) {
+            CodingPlatform platform = getOrCreatePlatform("Degre.AI");
+
+            if (colMap.containsKey("DEGRE_ID")) {
+                String degreUsername = getCleanStringValue(row, colMap.get("DEGRE_ID"));
+                if (degreUsername != null && !degreUsername.isBlank()) {
+                    PlatformAccount account = platformAccountRepository
+                            .findByStudentIdAndPlatformId(student.getId(), platform.getId())
+                            .orElse(new PlatformAccount(student, platform, degreUsername.trim()));
+                    account.setPlatformUsername(degreUsername.trim());
+                    platformAccountRepository.save(account);
+                }
+            }
+
+            PlatformPerformance perf = platformPerformanceRepository
+                    .findByStudentIdAndPlatformId(student.getId(), platform.getId())
+                    .orElse(new PlatformPerformance(student, platform));
+
+            // Variable weekly assessments: calculate arithmetic average of all marks (each out of 100)
+            BigDecimal avgScore = null;
+            if (degreAssessmentCols != null && !degreAssessmentCols.isEmpty()) {
+                BigDecimal sum = BigDecimal.ZERO;
+                int count = 0;
+                for (Integer colIdx : degreAssessmentCols) {
+                    BigDecimal scoreVal = getBigDecimalValue(row, colIdx, null);
+                    if (scoreVal != null) {
+                        sum = sum.add(scoreVal);
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    avgScore = sum.divide(BigDecimal.valueOf(count), 2, RoundingMode.HALF_UP);
+                }
+            }
+
+            // Fallback to single DEGRE_AVG or DEGRE_SCORE column if no multi-columns found
+            if (avgScore == null) {
+                if (colMap.containsKey("DEGRE_AVG")) {
+                    avgScore = getBigDecimalValue(row, colMap.get("DEGRE_AVG"), null);
+                } else if (colMap.containsKey("DEGRE_SCORE")) {
+                    avgScore = getBigDecimalValue(row, colMap.get("DEGRE_SCORE"), null);
+                }
+            }
+
+            if (avgScore != null) {
+                perf.setAssessmentScore(avgScore);
+            }
+
+            Integer solved = getIntValue(row, colMap.get("DEGRE_SOLVED"), null);
+            if (solved != null) {
+                perf.setProblemsSolved(solved);
+            }
+
+            perf.setUpdatedAt(ZonedDateTime.now());
+            platformPerformanceRepository.save(perf);
+            updated = true;
+        }
+
+        // --- E. ATCODER PLATFORM ---
+        if ("AtCoder".equalsIgnoreCase(sheetPlatform) || colMap.containsKey("ATCODER_RATING") || colMap.containsKey("ATCODER_ID")) {
+            CodingPlatform platform = getOrCreatePlatform("AtCoder");
+
+            String acUsername = getCleanStringValue(row, colMap.get("ATCODER_ID"));
+            if (acUsername != null && !acUsername.isBlank()) {
+                PlatformAccount account = platformAccountRepository
+                        .findByStudentIdAndPlatformId(student.getId(), platform.getId())
+                        .orElse(new PlatformAccount(student, platform, acUsername.trim()));
+                account.setPlatformUsername(acUsername.trim());
+                platformAccountRepository.save(account);
+            }
+
+            PlatformPerformance perf = platformPerformanceRepository
+                    .findByStudentIdAndPlatformId(student.getId(), platform.getId())
+                    .orElse(new PlatformPerformance(student, platform));
+
+            BigDecimal rating = getBigDecimalValue(row, colMap.get("ATCODER_RATING"), null);
+            Integer solved = getIntValue(row, colMap.get("ATCODER_SOLVED"), null);
+            if (rating != null) perf.setRating(rating);
+            if (solved != null) perf.setProblemsSolved(solved);
+
+            perf.setUpdatedAt(ZonedDateTime.now());
+            platformPerformanceRepository.save(perf);
+            updated = true;
+        }
+
+        // --- F. CODEFORCES PLATFORM ---
+        if ("Codeforces".equalsIgnoreCase(sheetPlatform) || colMap.containsKey("CODEFORCES_RATING") || colMap.containsKey("CODEFORCES_ID")) {
+            CodingPlatform platform = getOrCreatePlatform("Codeforces");
+
+            String cfUsername = getCleanStringValue(row, colMap.get("CODEFORCES_ID"));
+            if (cfUsername != null && !cfUsername.isBlank()) {
+                PlatformAccount account = platformAccountRepository
+                        .findByStudentIdAndPlatformId(student.getId(), platform.getId())
+                        .orElse(new PlatformAccount(student, platform, cfUsername.trim()));
+                account.setPlatformUsername(cfUsername.trim());
+                platformAccountRepository.save(account);
+            }
+
+            PlatformPerformance perf = platformPerformanceRepository
+                    .findByStudentIdAndPlatformId(student.getId(), platform.getId())
+                    .orElse(new PlatformPerformance(student, platform));
+
+            BigDecimal rating = getBigDecimalValue(row, colMap.get("CODEFORCES_RATING"), null);
+            Integer solved = getIntValue(row, colMap.get("CODEFORCES_SOLVED"), null);
+            if (rating != null) perf.setRating(rating);
+            if (solved != null) perf.setProblemsSolved(solved);
+
+            perf.setUpdatedAt(ZonedDateTime.now());
+            platformPerformanceRepository.save(perf);
+            updated = true;
+        }
+
         return updated;
     }
 
     private CodingPlatform getOrCreatePlatform(String platformName) {
+        BigDecimal defaultWeight = switch (platformName.trim().toUpperCase()) {
+            case "LEETCODE" -> BigDecimal.valueOf(30.00);
+            case "SKILLRACK" -> BigDecimal.valueOf(10.00);
+            case "ATCODER" -> BigDecimal.valueOf(20.00);
+            case "CODEFORCES" -> BigDecimal.valueOf(20.00);
+            case "DEGRE.AI", "DEGREE_AI", "DEGREE.AI" -> BigDecimal.valueOf(20.00);
+            default -> BigDecimal.valueOf(20.00);
+        };
         return codingPlatformRepository.findByPlatformNameIgnoreCase(platformName.trim())
                 .orElseGet(() -> codingPlatformRepository.save(
-                        new CodingPlatform(platformName.trim(), BigDecimal.valueOf(20.00), true)
+                        new CodingPlatform(platformName.trim(), defaultWeight, true)
                 ));
     }
 
@@ -399,9 +522,73 @@ public class ExcelImportService {
             } else if (upper.contains("(MCQ)") || upper.contains("APTITUDE TEST")) {
                 map.put("WEEKLY_MCQ", c);
             }
+
+            // Degre.AI
+            else if (upper.matches(".*(DEGRE\\s*ID|DEGREID|DEGREE\\s*ID).*")) {
+                map.put("DEGRE_ID", c);
+            } else if (upper.matches(".*(DEGRE\\s*SOLVED|DEGRE.*PROBLEMS).*")) {
+                map.put("DEGRE_SOLVED", c);
+            } else if (upper.matches(".*(DEGRE.*(SCORE|AVG|AVERAGE)).*")) {
+                map.put("DEGRE_AVG", c);
+            }
+
+            // AtCoder
+            else if (upper.matches(".*(ATCODER\\s*ID|ATCODER\\s*USERNAME).*")) {
+                map.put("ATCODER_ID", c);
+            } else if (upper.matches(".*(ATCODER\\s*RATING).*")) {
+                map.put("ATCODER_RATING", c);
+            } else if (upper.matches(".*(ATCODER\\s*SOLVED).*")) {
+                map.put("ATCODER_SOLVED", c);
+            }
+
+            // Codeforces
+            else if (upper.matches(".*(CODEFORCES\\s*ID|CODEFORCES\\s*USERNAME|CF\\s*HANDLE).*")) {
+                map.put("CODEFORCES_ID", c);
+            } else if (upper.matches(".*(CODEFORCES\\s*RATING|CF\\s*RATING).*")) {
+                map.put("CODEFORCES_RATING", c);
+            } else if (upper.matches(".*(CODEFORCES\\s*SOLVED|CF\\s*SOLVED).*")) {
+                map.put("CODEFORCES_SOLVED", c);
+            }
         }
 
         return map;
+    }
+
+    private List<Integer> findDegreAssessmentColumns(Row headerRow, Map<String, Integer> colMap, String sheetName) {
+        List<Integer> cols = new ArrayList<>();
+        if (headerRow == null) return cols;
+
+        Set<Integer> knownCols = new HashSet<>(colMap.values());
+
+        // 1. Check for explicit assessment column headers
+        for (Cell cell : headerRow) {
+            int c = cell.getColumnIndex();
+            String val = getCellString(cell).trim().toUpperCase();
+            if (val.isEmpty()) continue;
+
+            if (val.matches(".*(ASSESSMENT|ASSMT|TEST|EXAM|LAB|TASK|CHALLENGE|MARKS)\\s*\\d*.*")
+                    || val.matches("^[AT]\\s*\\d+$")) {
+                if (!knownCols.contains(c) || val.contains("ASSESSMENT") || val.contains("ASSMT")) {
+                    cols.add(c);
+                }
+            }
+        }
+
+        // 2. Fallback: If no explicit patterns matched, but sheet name indicates Degre.AI
+        if (cols.isEmpty() && (sheetName.toLowerCase().contains("degre") || sheetName.toLowerCase().contains("degree"))) {
+            for (Cell cell : headerRow) {
+                int c = cell.getColumnIndex();
+                if (knownCols.contains(c)) continue;
+
+                String val = getCellString(cell).trim().toUpperCase();
+                if (!val.isEmpty() && !val.equals("TOTAL") && !val.equals("AVERAGE") && !val.equals("S.NO")
+                        && !val.equals("#") && !val.equals("SL NO") && !val.equals("GENDER")) {
+                    cols.add(c);
+                }
+            }
+        }
+
+        return cols;
     }
 
     private String detectPlatformForSheet(String sheetName, Map<String, Integer> colMap) {
@@ -409,15 +596,17 @@ public class ExcelImportService {
         if (sn.contains("leetcode") || colMap.containsKey("LEETCODE_ID") || colMap.containsKey("CONTEST_RATING") || colMap.containsKey("GLOBAL_RANK")) {
             return "LeetCode";
         }
+        if (sn.contains("degre") || sn.contains("degree") || colMap.containsKey("DEGRE_AVG") || colMap.containsKey("DEGRE_ID")) {
+            return "Degre.AI";
+        }
         if (colMap.containsKey("WEEKLY_CODE") || colMap.containsKey("WEEKLY_MCQ") || sn.contains("ranking") || sn.contains("candidate") || sn.contains("assessment")) {
             return "Weekly";
         }
         if (sn.contains("pgp") || sn.contains("skillrack") || colMap.containsKey("PROGRAMS_SOLVED") || colMap.containsKey("TOTAL_POINTS") || colMap.containsKey("DC") || colMap.containsKey("DT")) {
             return "SkillRack";
         }
-        if (sn.contains("atcoder")) return "AtCoder";
-        if (sn.contains("codeforces")) return "Codeforces";
-        if (sn.contains("degre")) return "Degre.AI";
+        if (sn.contains("atcoder") || colMap.containsKey("ATCODER_RATING")) return "AtCoder";
+        if (sn.contains("codeforces") || colMap.containsKey("CODEFORCES_RATING")) return "Codeforces";
         return "Unknown";
     }
 

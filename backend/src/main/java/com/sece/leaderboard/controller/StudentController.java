@@ -82,8 +82,10 @@ public class StudentController {
         rankCollegeTopperRepository.findById(s.getId()).ifPresent(topper -> {
             rankings.setCollegeRank(topper.getRank());
             rankings.setOverallScore(topper.getOverallScore());
+            rankings.setCategory(topper.getCategory());
             dto.setCollegeRank(topper.getRank());
             dto.setOverallScore(topper.getOverallScore());
+            dto.setCategory(topper.getCategory());
         });
 
         rankYearTopperRepository.findById(s.getId()).ifPresent(yearTopper -> {

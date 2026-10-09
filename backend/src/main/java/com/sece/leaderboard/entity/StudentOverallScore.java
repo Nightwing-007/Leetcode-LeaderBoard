@@ -39,6 +39,9 @@ public class StudentOverallScore {
     @Column(name = "overall_score")
     private BigDecimal overallScore;
 
+    @Column(name = "category")
+    private String category;
+
     public StudentOverallScore() {}
 
     public Long getStudentId() {
@@ -95,5 +98,13 @@ public class StudentOverallScore {
 
     public void setOverallScore(BigDecimal overallScore) {
         this.overallScore = overallScore;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

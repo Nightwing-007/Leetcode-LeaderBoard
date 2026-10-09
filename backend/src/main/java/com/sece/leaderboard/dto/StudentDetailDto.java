@@ -35,6 +35,7 @@ public class StudentDetailDto {
     private Long classSize;
     private BigDecimal percentile;
     private BigDecimal overallScore;
+    private String category;
     private Integer rank;          // legacy alias for collegeRank
     private Long compositeScore;   // legacy alias for overallScore
 
@@ -170,6 +171,9 @@ public class StudentDetailDto {
         this.compositeScore = overallScore != null ? overallScore.longValue() : 0L;
         if (this.rankings != null) this.rankings.setOverallScore(overallScore);
     }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
     public Integer getRank() {
         if (rank != null) return rank;

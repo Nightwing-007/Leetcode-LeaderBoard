@@ -50,6 +50,9 @@ public class LeaderboardRowDto {
     // Composite Score (Backwards compatible alias for overallScore)
     private Long compositeScore;
 
+    // Percentile Category (Starter, Solver, Challenger, Specialist, Elite)
+    private String category;
+
     public LeaderboardRowDto() {}
 
     public Long getId() { return id; }
@@ -93,6 +96,9 @@ public class LeaderboardRowDto {
 
     public BigDecimal getPercentile() { return percentile; }
     public void setPercentile(BigDecimal percentile) { this.percentile = percentile; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 
     public String getLeetcodeId() { return leetcodeId; }
     public void setLeetcodeId(String leetcodeId) { this.leetcodeId = leetcodeId; }

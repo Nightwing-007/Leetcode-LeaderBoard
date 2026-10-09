@@ -283,6 +283,7 @@ public class LeaderboardService {
         // Strictly pre-calculated overall score from PostgreSQL view
         dto.setOverallScore(record.getOverallScore());
         dto.setCompositeScore(record.getOverallScore() != null ? record.getOverallScore().longValue() : 0L);
+        dto.setCategory(record.getCategory());
 
         if (record instanceof RankClassTopper classTopper) {
             dto.setClassSize(classTopper.getClassSize());
@@ -304,6 +305,7 @@ public class LeaderboardService {
         dto.setSection(score.getSection());
         dto.setOverallScore(score.getOverallScore());
         dto.setCompositeScore(score.getOverallScore() != null ? score.getOverallScore().longValue() : 0L);
+        dto.setCategory(score.getCategory());
 
         attachStudentPlatformMetrics(dto, score.getStudentId());
         return dto;
@@ -323,6 +325,7 @@ public class LeaderboardService {
         studentOverallScoreRepository.findById(s.getId()).ifPresent(score -> {
             dto.setOverallScore(score.getOverallScore());
             dto.setCompositeScore(score.getOverallScore() != null ? score.getOverallScore().longValue() : 0L);
+            dto.setCategory(score.getCategory());
         });
 
         attachStudentPlatformMetrics(dto, s.getId());

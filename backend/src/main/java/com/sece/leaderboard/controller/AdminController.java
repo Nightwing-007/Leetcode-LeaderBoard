@@ -83,7 +83,7 @@ public class AdminController {
         if ((request.getLeetcodeId() != null && !request.getLeetcodeId().isBlank())
                 || request.getContestRating() != null || request.getSolvedTotal() != null) {
             CodingPlatform lcPlatform = codingPlatformRepository.findByPlatformNameIgnoreCase("LeetCode")
-                    .orElseGet(() -> codingPlatformRepository.save(new CodingPlatform("LeetCode", BigDecimal.valueOf(20.00), true)));
+                    .orElseGet(() -> codingPlatformRepository.save(new CodingPlatform("LeetCode", BigDecimal.valueOf(30.00), true)));
 
             if (request.getLeetcodeId() != null && !request.getLeetcodeId().isBlank()) {
                 PlatformAccount account = platformAccountRepository
@@ -110,7 +110,7 @@ public class AdminController {
         // Update SkillRack platform performance if provided
         if (request.getProgramsSolved() != null || request.getPoints() != null || request.getSkillrackRank() != null || request.getAptitudeScore() != null) {
             CodingPlatform srPlatform = codingPlatformRepository.findByPlatformNameIgnoreCase("SkillRack")
-                    .orElseGet(() -> codingPlatformRepository.save(new CodingPlatform("SkillRack", BigDecimal.valueOf(20.00), true)));
+                    .orElseGet(() -> codingPlatformRepository.save(new CodingPlatform("SkillRack", BigDecimal.valueOf(10.00), true)));
 
             PlatformPerformance srPerf = platformPerformanceRepository
                     .findByStudentIdAndPlatformId(student.getId(), srPlatform.getId())

@@ -42,6 +42,9 @@ public class RankDepartmentTopper implements LeaderboardRankRecord {
     @Column(name = "overall_score")
     private BigDecimal overallScore;
 
+    @Column(name = "category")
+    private String category;
+
     public RankDepartmentTopper() {}
 
     @Override
@@ -114,5 +117,14 @@ public class RankDepartmentTopper implements LeaderboardRankRecord {
 
     public void setOverallScore(BigDecimal overallScore) {
         this.overallScore = overallScore;
+    }
+
+    @Override
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

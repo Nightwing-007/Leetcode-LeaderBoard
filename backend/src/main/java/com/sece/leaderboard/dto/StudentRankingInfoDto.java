@@ -13,10 +13,15 @@ public class StudentRankingInfoDto {
     private Long classSize;
     private BigDecimal percentile;
     private BigDecimal overallScore;
+    private String category;
 
     public StudentRankingInfoDto() {}
 
     public StudentRankingInfoDto(Long collegeRank, Long yearRank, Long departmentRank, Long classRank, Long classSize, BigDecimal percentile, BigDecimal overallScore) {
+        this(collegeRank, yearRank, departmentRank, classRank, classSize, percentile, overallScore, null);
+    }
+
+    public StudentRankingInfoDto(Long collegeRank, Long yearRank, Long departmentRank, Long classRank, Long classSize, BigDecimal percentile, BigDecimal overallScore, String category) {
         this.collegeRank = collegeRank;
         this.yearRank = yearRank;
         this.departmentRank = departmentRank;
@@ -24,6 +29,7 @@ public class StudentRankingInfoDto {
         this.classSize = classSize;
         this.percentile = percentile;
         this.overallScore = overallScore;
+        this.category = category;
     }
 
     public Long getCollegeRank() {
@@ -80,5 +86,13 @@ public class StudentRankingInfoDto {
 
     public void setOverallScore(BigDecimal overallScore) {
         this.overallScore = overallScore;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

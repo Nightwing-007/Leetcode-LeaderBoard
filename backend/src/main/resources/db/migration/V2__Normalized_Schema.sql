@@ -6,9 +6,10 @@ CREATE TABLE coding_platforms (
 );
 
 INSERT INTO coding_platforms (platform_name, weight_percentage) VALUES 
-    ('LeetCode', 20.00), ('SkillRack', 20.00), ('AtCoder', 20.00), ('Codeforces', 20.00), ('Degre.AI', 20.00);
+    ('LeetCode', 30.00), ('SkillRack', 10.00), ('AtCoder', 20.00), ('Codeforces', 20.00), ('Degre.AI', 20.00)
+ON CONFLICT (platform_name) DO UPDATE SET weight_percentage = EXCLUDED.weight_percentage;
 
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
     id BIGSERIAL PRIMARY KEY,
     register_number VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(150) NOT NULL,
@@ -20,7 +21,7 @@ CREATE TABLE students (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE platform_accounts (
+CREATE TABLE IF NOT EXISTS platform_accounts (
     id BIGSERIAL PRIMARY KEY,
     student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
     platform_id INT REFERENCES coding_platforms(id) ON DELETE CASCADE,
@@ -29,7 +30,7 @@ CREATE TABLE platform_accounts (
     UNIQUE (student_id, platform_id)
 );
 
-CREATE TABLE platform_performance (
+CREATE TABLE IF NOT EXISTS platform_performance (
     id BIGSERIAL PRIMARY KEY,
     student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
     platform_id INT REFERENCES coding_platforms(id) ON DELETE CASCADE,
@@ -43,7 +44,7 @@ CREATE TABLE platform_performance (
     UNIQUE (student_id, platform_id)
 );
 
-CREATE TABLE assessments (
+CREATE TABLE IF NOT EXISTS assessments (
     id BIGSERIAL PRIMARY KEY,
     student_id BIGINT REFERENCES students(id) ON DELETE CASCADE,
     platform_id INT REFERENCES coding_platforms(id) ON DELETE CASCADE,
@@ -55,36 +56,159 @@ CREATE TABLE assessments (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_students_reg_no ON students(register_number);
-CREATE INDEX idx_students_dept ON students(department);
-CREATE INDEX idx_students_year ON students(academic_year);
-CREATE INDEX idx_students_section ON students(section);
-CREATE INDEX idx_students_composite ON students(department, academic_year, section);
-CREATE INDEX idx_perf_student_platform ON platform_performance(student_id, platform_id);
+CREATE INDEX IF NOT EXISTS idx_students_reg_no ON students(register_number);
+CREATE INDEX IF NOT EXISTS idx_students_dept ON students(department);
+CREATE INDEX IF NOT EXISTS idx_students_year ON students(academic_year);
+CREATE INDEX IF NOT EXISTS idx_students_section ON students(section);
+CREATE INDEX IF NOT EXISTS idx_students_composite ON students(department, academic_year, section);
+CREATE INDEX IF NOT EXISTS idx_perf_student_platform ON platform_performance(student_id, platform_id);
 
 CREATE OR REPLACE VIEW v_student_overall_scores AS
-WITH platform_max_min AS (
-    SELECT platform_id, NULLIF(MAX(problems_solved + rating + assessment_score), 0) as max_val, MIN(problems_solved + rating + assessment_score) as min_val
-    FROM platform_performance GROUP BY platform_id
+WITH platform_weights AS (
+    SELECT
+        COALESCE(MAX(CASE WHEN UPPER(platform_name) = 'LEETCODE' THEN weight_percentage END), 30.00) AS w_lc,
+        COALESCE(MAX(CASE WHEN UPPER(platform_name) = 'SKILLRACK' THEN weight_percentage END), 10.00) AS w_sr,
+        COALESCE(MAX(CASE WHEN UPPER(platform_name) = 'ATCODER' THEN weight_percentage END), 20.00) AS w_ac,
+        COALESCE(MAX(CASE WHEN UPPER(platform_name) = 'CODEFORCES' THEN weight_percentage END), 20.00) AS w_cf,
+        COALESCE(MAX(CASE WHEN UPPER(platform_name) LIKE 'DEGRE%' THEN weight_percentage END), 20.00) AS w_dg
+    FROM coding_platforms
 ),
-normalized_performance AS (
-    SELECT pp.student_id, pp.platform_id, cp.weight_percentage,
-        COALESCE((((pp.problems_solved + pp.rating + pp.assessment_score) - pmm.min_val) / (pmm.max_val - pmm.min_val)) * (cp.weight_percentage), 0) AS weighted_score
-    FROM platform_performance pp
-    JOIN coding_platforms cp ON pp.platform_id = cp.id
-    JOIN platform_max_min pmm ON pp.platform_id = pmm.platform_id
+leetcode_pct AS (
+    SELECT
+        s.id AS student_id,
+        PERCENT_RANK() OVER (ORDER BY pp.global_rank DESC NULLS FIRST) AS pct
+    FROM students s
+    LEFT JOIN platform_performance pp
+        ON pp.student_id = s.id
+       AND pp.platform_id = (SELECT id FROM coding_platforms WHERE UPPER(platform_name) = 'LEETCODE' LIMIT 1)
+),
+skillrack_pct AS (
+    SELECT
+        s.id AS student_id,
+        PERCENT_RANK() OVER (ORDER BY COALESCE(pp.global_rank, pp.assessment_rank) DESC NULLS FIRST) AS pct
+    FROM students s
+    LEFT JOIN platform_performance pp
+        ON pp.student_id = s.id
+       AND pp.platform_id = (SELECT id FROM coding_platforms WHERE UPPER(platform_name) = 'SKILLRACK' LIMIT 1)
+),
+codeforces_pct AS (
+    SELECT
+        s.id AS student_id,
+        PERCENT_RANK() OVER (ORDER BY pp.rating ASC NULLS FIRST) AS pct
+    FROM students s
+    LEFT JOIN platform_performance pp
+        ON pp.student_id = s.id
+       AND pp.platform_id = (SELECT id FROM coding_platforms WHERE UPPER(platform_name) = 'CODEFORCES' LIMIT 1)
+),
+atcoder_pct AS (
+    SELECT
+        s.id AS student_id,
+        PERCENT_RANK() OVER (ORDER BY pp.rating ASC NULLS FIRST) AS pct
+    FROM students s
+    LEFT JOIN platform_performance pp
+        ON pp.student_id = s.id
+       AND pp.platform_id = (SELECT id FROM coding_platforms WHERE UPPER(platform_name) = 'ATCODER' LIMIT 1)
+),
+degre_pct AS (
+    SELECT
+        s.id AS student_id,
+        PERCENT_RANK() OVER (ORDER BY pp.assessment_score ASC NULLS FIRST) AS pct
+    FROM students s
+    LEFT JOIN platform_performance pp
+        ON pp.student_id = s.id
+       AND pp.platform_id = (SELECT id FROM coding_platforms WHERE UPPER(platform_name) LIKE 'DEGRE%' LIMIT 1)
+),
+base_cumulative AS (
+    SELECT
+        s.id AS student_id,
+        s.register_number,
+        s.name,
+        s.academic_year,
+        s.department,
+        s.section,
+        (
+            (COALESCE(lc.pct, 0) * pw.w_lc) +
+            (COALESCE(sr.pct, 0) * pw.w_sr) +
+            (COALESCE(ac.pct, 0) * pw.w_ac) +
+            (COALESCE(cf.pct, 0) * pw.w_cf) +
+            (COALESCE(dg.pct, 0) * pw.w_dg)
+        ) AS base_cumulative_score
+    FROM students s
+    CROSS JOIN platform_weights pw
+    JOIN leetcode_pct lc ON lc.student_id = s.id
+    JOIN skillrack_pct sr ON sr.student_id = s.id
+    JOIN atcoder_pct ac ON ac.student_id = s.id
+    JOIN codeforces_pct cf ON cf.student_id = s.id
+    JOIN degre_pct dg ON dg.student_id = s.id
+),
+final_scores AS (
+    SELECT
+        student_id,
+        register_number,
+        name,
+        academic_year,
+        department,
+        section,
+        base_cumulative_score,
+        ROUND((PERCENT_RANK() OVER (ORDER BY base_cumulative_score ASC) * 100)::numeric, 2) AS ct_score
+    FROM base_cumulative
 )
-SELECT s.id AS student_id, s.register_number, s.name, s.academic_year, s.department, s.section, COALESCE(SUM(np.weighted_score), 0) AS overall_score
-FROM students s LEFT JOIN normalized_performance np ON s.id = np.student_id GROUP BY s.id;
+SELECT
+    student_id,
+    register_number,
+    name,
+    academic_year,
+    department,
+    section,
+    ct_score AS overall_score,
+    CASE
+        WHEN ct_score >= 80.00 THEN 'Elite'
+        WHEN ct_score >= 60.00 THEN 'Specialist'
+        WHEN ct_score >= 40.00 THEN 'Challenger'
+        WHEN ct_score >= 20.00 THEN 'Solver'
+        ELSE 'Starter'
+    END AS category
+FROM final_scores;
 
-CREATE OR REPLACE VIEW v_rank_college_toppers AS SELECT RANK() OVER (ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
-CREATE OR REPLACE VIEW v_rank_year_toppers AS SELECT RANK() OVER (PARTITION BY academic_year ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
-CREATE OR REPLACE VIEW v_rank_department_toppers AS SELECT RANK() OVER (PARTITION BY department ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
-CREATE OR REPLACE VIEW v_rank_department_year_toppers AS SELECT RANK() OVER (PARTITION BY department, academic_year ORDER BY overall_score DESC) as rank, student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores;
+CREATE OR REPLACE VIEW v_rank_college_toppers AS
+SELECT
+    RANK() OVER (ORDER BY overall_score DESC) as rank,
+    student_id, register_number, name, department, academic_year, section,
+    overall_score, category
+FROM v_student_overall_scores;
+
+CREATE OR REPLACE VIEW v_rank_year_toppers AS
+SELECT
+    RANK() OVER (PARTITION BY academic_year ORDER BY overall_score DESC) as rank,
+    student_id, register_number, name, department, academic_year, section,
+    overall_score, category
+FROM v_student_overall_scores;
+
+CREATE OR REPLACE VIEW v_rank_department_toppers AS
+SELECT
+    RANK() OVER (PARTITION BY department ORDER BY overall_score DESC) as rank,
+    student_id, register_number, name, department, academic_year, section,
+    overall_score, category
+FROM v_student_overall_scores;
+
+CREATE OR REPLACE VIEW v_rank_department_year_toppers AS
+SELECT
+    RANK() OVER (PARTITION BY department, academic_year ORDER BY overall_score DESC) as rank,
+    student_id, register_number, name, department, academic_year, section,
+    overall_score, category
+FROM v_student_overall_scores;
+
 CREATE OR REPLACE VIEW v_rank_class_toppers AS
 WITH ranked_classes AS (
-    SELECT RANK() OVER (PARTITION BY department, academic_year, section ORDER BY overall_score DESC) as class_rank,
-    COUNT(*) OVER (PARTITION BY department, academic_year, section) as class_size,
-    student_id, register_number, name, department, academic_year, section, overall_score FROM v_student_overall_scores
+    SELECT
+        RANK() OVER (PARTITION BY department, academic_year, section ORDER BY overall_score DESC) as class_rank,
+        COUNT(*) OVER (PARTITION BY department, academic_year, section) as class_size,
+        student_id, register_number, name, department, academic_year, section,
+        overall_score, category
+    FROM v_student_overall_scores
 )
-SELECT class_rank, student_id, register_number, name, department, academic_year, section, overall_score, class_size, ROUND(((class_size - class_rank) / class_size::numeric) * 100, 2) AS percentile FROM ranked_classes;
+SELECT
+    class_rank, student_id, register_number, name, department, academic_year, section,
+    overall_score, category, class_size,
+    ROUND(((class_size - class_rank) / NULLIF(class_size::numeric, 0)) * 100, 2) AS percentile
+FROM ranked_classes;

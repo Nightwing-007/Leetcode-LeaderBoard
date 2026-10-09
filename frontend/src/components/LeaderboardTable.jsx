@@ -28,6 +28,7 @@ import {
   calculateCompositeScore
 } from '../data/sampleData';
 import { CustomSelect } from './CustomSelect';
+import { CategoryBadge } from './CategoryBadge';
 
 export function LeaderboardTable({
   students = [],
@@ -611,9 +612,12 @@ export function LeaderboardTable({
                     {activeTab === 'class' && (
                       <>
                         <td>
-                          <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem', fontWeight: 900 }}>
-                            ⭐ {Math.round(compScore).toLocaleString()}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem', fontWeight: 900 }}>
+                              ⭐ {Math.round(compScore).toLocaleString()}
+                            </span>
+                            <CategoryBadge category={st.category} score={compScore} />
+                          </div>
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           <span style={{ fontWeight: 700, color: 'var(--text-main)', background: 'var(--bg-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
@@ -644,9 +648,12 @@ export function LeaderboardTable({
                     {['college', 'year', 'department', 'dept_year'].includes(activeTab) && (
                       <>
                         <td>
-                          <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1.05rem', fontWeight: 900 }}>
-                            ⭐ {Math.round(compScore).toLocaleString()}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1.05rem', fontWeight: 900 }}>
+                              ⭐ {Math.round(compScore).toLocaleString()}
+                            </span>
+                            <CategoryBadge category={st.category} score={compScore} />
+                          </div>
                         </td>
                         <td>
                           {lcGlobalRank > 0 && lcGlobalRank < 900000 ? `#${lcGlobalRank.toLocaleString()}` : (lcRating > 1500 ? `Rating ${Math.round(lcRating)}` : '—')}

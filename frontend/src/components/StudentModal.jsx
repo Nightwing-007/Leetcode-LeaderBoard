@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Code, Flame, Star, Trophy, Award, Zap, Target, Globe, Cpu, Users, BarChart3, ShieldCheck } from 'lucide-react';
 import { fetchStudentDetail } from '../api/leaderboardApi';
+import { CategoryBadge } from './CategoryBadge';
 
 export function StudentModal({ student, onClose }) {
   const [studentData, setStudentData] = useState(student);
@@ -123,8 +124,9 @@ export function StudentModal({ student, onClose }) {
               {current.name ? current.name.charAt(0).toUpperCase() : 'S'}
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#FFF', margin: 0 }}>{current.name}</h3>
+                <CategoryBadge category={current.category} score={overallScore} />
                 {loading && <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>Syncing 360°...</span>}
               </div>
               <p style={{ fontSize: '0.85rem', color: '#FFC72C', fontFamily: 'var(--font-mono)', margin: '4px 0 0 0' }}>
@@ -150,11 +152,12 @@ export function StudentModal({ student, onClose }) {
                   Institutional Rankings &amp; Percentile
                 </h4>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Normalized Composite:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>CT Score:</span>
                 <span style={{ background: 'var(--sece-navy-900)', color: '#FFC72C', fontWeight: 900, padding: '3px 10px', borderRadius: '8px', fontSize: '0.9rem' }}>
                   ⭐ {Number(overallScore).toLocaleString()} pts
                 </span>
+                <CategoryBadge category={current.category} score={overallScore} />
               </div>
             </div>
 
