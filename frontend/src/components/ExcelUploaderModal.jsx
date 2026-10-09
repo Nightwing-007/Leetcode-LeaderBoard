@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, UploadCloud, FileSpreadsheet, Download, CheckCircle, AlertCircle, RefreshCw, Key } from 'lucide-react';
+import { X, UploadCloud, FileSpreadsheet, Download, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { parseExcelData, generateLeetcodeTemplate } from '../utils/excelParser';
 import { uploadExcelToBackend, clearAllDataFromBackend } from '../api/leaderboardApi';
 import { dbReplaceAllStudents, dbClearAll } from '../db/database';
@@ -9,7 +9,6 @@ export function ExcelUploaderModal({ isOpen, onClose, onUploadSuccess, currentSt
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [adminPin, setAdminPin] = useState('sece2026');
 
   if (!isOpen) return null;
 
@@ -28,7 +27,7 @@ export function ExcelUploaderModal({ isOpen, onClose, onUploadSuccess, currentSt
       // Also upload to Spring Boot Backend if available
       let backendDetectedType = null;
       try {
-        const backendRes = await uploadExcelToBackend(file, adminPin);
+        const backendRes = await uploadExcelToBackend(file);
         if (backendRes && backendRes.success) {
           backendDetectedType = backendRes.detectedType;
           console.log(`Backend synchronized successfully: ${backendRes.totalRowsProcessed} rows processed.`);
@@ -62,7 +61,7 @@ export function ExcelUploaderModal({ isOpen, onClose, onUploadSuccess, currentSt
       setSuccessMsg('');
 
       try {
-        await clearAllDataFromBackend(adminPin);
+        await clearAllDataFromBackend();
       } catch (e) {
         console.warn("Backend clear failed or offline:", e);
       }
@@ -99,19 +98,6 @@ export function ExcelUploaderModal({ isOpen, onClose, onUploadSuccess, currentSt
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
             Upload <strong>Batch (2024-2028) PGP Report.xlsx</strong>, <strong>CandidateRankingDetails.xlsx</strong> (Weekly Assessment), or <strong>Leetcode Report.xlsx</strong>. The system automatically merges records by Register / Roll No and updates the Smart TV &amp; live leaderboard!
           </p>
-
-          {/* Admin PIN Input */}
-          <div style={{ marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-primary)', padding: '0.6rem 0.85rem', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-            <Key size={16} color="var(--sece-gold-500)" />
-            <label style={{ fontSize: '0.85rem', fontWeight: 700, whiteSpace: 'nowrap' }}>Admin PIN:</label>
-            <input
-              type="password"
-              value={adminPin}
-              onChange={(e) => setAdminPin(e.target.value)}
-              placeholder="Enter Admin PIN"
-              style={{ flex: 1, border: 'none', background: 'transparent', outline: 'none', fontSize: '0.9rem', color: 'var(--text-main)' }}
-            />
-          </div>
 
           {/* Drag & Drop Area */}
           <div

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Code, Flame, Star, Trophy, Award, Zap, Target, Globe, Cpu, Users, BarChart3, ShieldCheck } from 'lucide-react';
+import { X, Code, Flame, Star, Trophy, Award, Zap, Target, Globe, Cpu, Users, BarChart3, ShieldCheck, Edit2, Trash2 } from 'lucide-react';
 import { fetchStudentDetail } from '../api/leaderboardApi';
 import { CategoryBadge } from './CategoryBadge';
 
-export function StudentModal({ student, onClose }) {
+export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDelete }) {
   const [studentData, setStudentData] = useState(student);
   const [loading, setLoading] = useState(false);
 
@@ -135,9 +135,40 @@ export function StudentModal({ student, onClose }) {
             </div>
           </div>
 
-          <button className="btn btn-navy" style={{ padding: '0.35rem' }} onClick={onClose}>
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {isAdmin && (
+              <>
+                <button
+                  className="btn btn-navy"
+                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                  onClick={() => {
+                    if (onEdit) onEdit(current);
+                    onClose();
+                  }}
+                  title="Edit coder details"
+                >
+                  <Edit2 size={14} />
+                  <span>Edit</span>
+                </button>
+                <button
+                  className="btn btn-navy"
+                  style={{ padding: '0.4rem 0.75rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.35rem', borderColor: 'rgba(239,68,68,0.5)', color: '#EF4444' }}
+                  onClick={() => {
+                    const roll = current.rollNo || current.registerNumber || current.id;
+                    if (onDelete && roll) onDelete(roll);
+                    onClose();
+                  }}
+                  title="Delete coder record"
+                >
+                  <Trash2 size={14} />
+                  <span>Delete</span>
+                </button>
+              </>
+            )}
+            <button className="btn btn-navy" style={{ padding: '0.35rem' }} onClick={onClose}>
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="modal-body" style={{ padding: '1.25rem' }}>

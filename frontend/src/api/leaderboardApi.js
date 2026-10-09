@@ -143,14 +143,61 @@ export async function fetchStudentDetail(rollNo) {
   return await res.json();
 }
 
-export async function uploadExcelToBackend(file, adminPin = 'sece2026') {
+const TOKEN_STORAGE_KEY = 'sece_admin_token';
+
+export function getAdminToken() {
+  return localStorage.getItem(TOKEN_STORAGE_KEY) || '';
+}
+
+export function setAdminToken(token) {
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  }
+}
+
+export function removeAdminToken() {
+  localStorage.removeItem(TOKEN_STORAGE_KEY);
+}
+
+/**
+ * Admin authentication endpoint with JWT token generation.
+ */
+export async function loginAdmin(username, password) {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ username, password })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || errData.error || 'Invalid admin credentials');
+  }
+
+  const data = await res.json();
+  if (data && data.token) {
+    setAdminToken(data.token);
+  }
+  return data;
+}
+
+function getAuthHeaders(token) {
+  const activeToken = token || getAdminToken();
+  return activeToken ? { 'Authorization': `Bearer ${activeToken}` } : {};
+}
+
+export async function uploadExcelToBackend(file, token) {
   const formData = new FormData();
   formData.append('file', file);
 
   const res = await fetch(`${API_BASE_URL}/admin/upload-excel`, {
     method: 'POST',
     headers: {
-      'X-Admin-PIN': adminPin
+      ...getAuthHeaders(token)
     },
     body: formData
   });
@@ -162,12 +209,12 @@ export async function uploadExcelToBackend(file, adminPin = 'sece2026') {
   return await res.json();
 }
 
-export async function saveStudentToBackend(studentData, adminPin = 'sece2026') {
+export async function saveStudentToBackend(studentData, token) {
   const res = await fetch(`${API_BASE_URL}/admin/students`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-Admin-PIN': adminPin
+      ...getAuthHeaders(token)
     },
     body: JSON.stringify(studentData)
   });
@@ -179,11 +226,11 @@ export async function saveStudentToBackend(studentData, adminPin = 'sece2026') {
   return await res.json();
 }
 
-export async function deleteStudentFromBackend(rollNo, adminPin = 'sece2026') {
+export async function deleteStudentFromBackend(rollNo, token) {
   const res = await fetch(`${API_BASE_URL}/admin/students/${encodeURIComponent(rollNo)}`, {
     method: 'DELETE',
     headers: {
-      'X-Admin-PIN': adminPin
+      ...getAuthHeaders(token)
     }
   });
 
@@ -194,24 +241,30 @@ export async function deleteStudentFromBackend(rollNo, adminPin = 'sece2026') {
   return await res.json();
 }
 
-export async function clearAllDataFromBackend(adminPin = 'sece2026') {
+export async function clearAllDataFromBackend(token) {
   const res = await fetch(`${API_BASE_URL}/admin/clear-all`, {
     method: 'DELETE',
     headers: {
-      'X-Admin-PIN': adminPin
+      ...getAuthHeaders(token)
     }
   });
-  if (!res.ok) throw new Error(`Clear data failed: ${res.statusText}`);
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || errData.error || `Clear data failed (${res.status})`);
+  }
   return await res.json();
 }
 
-export async function triggerLeetCodeSyncBackend(adminPin = 'sece2026') {
+export async function triggerLeetCodeSyncBackend(token) {
   const res = await fetch(`${API_BASE_URL}/admin/sync-leetcode`, {
     method: 'POST',
     headers: {
-      'X-Admin-PIN': adminPin
+      ...getAuthHeaders(token)
     }
   });
-  if (!res.ok) throw new Error(`Sync trigger failed: ${res.statusText}`);
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || errData.error || `Sync trigger failed (${res.status})`);
+  }
   return await res.json();
 }

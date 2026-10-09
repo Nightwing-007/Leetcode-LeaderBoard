@@ -13,13 +13,13 @@ import java.util.List;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    private final AdminPinInterceptor adminPinInterceptor;
+    private final JwtAuthInterceptor jwtAuthInterceptor;
 
     @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5173,http://localhost:4173}")
     private List<String> allowedOrigins;
 
-    public WebConfig(AdminPinInterceptor adminPinInterceptor) {
-        this.adminPinInterceptor = adminPinInterceptor;
+    public WebConfig(JwtAuthInterceptor jwtAuthInterceptor) {
+        this.jwtAuthInterceptor = jwtAuthInterceptor;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class WebConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(adminPinInterceptor)
+        registry.addInterceptor(jwtAuthInterceptor)
                 .addPathPatterns("/api/v1/admin/**");
     }
 

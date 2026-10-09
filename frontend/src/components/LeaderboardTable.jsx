@@ -49,6 +49,7 @@ export function LeaderboardTable({
   onSelectStudent,
   onEditStudent,
   onDeleteStudent,
+  isAdmin = false,
   serverPage,
   serverTotalPages,
   serverTotalElements,
@@ -521,13 +522,15 @@ export function LeaderboardTable({
                 </>
               )}
 
-              <th style={{ width: '90px', minWidth: '90px', textAlign: 'center' }}>Action</th>
+              {isAdmin && (
+                <th style={{ width: '90px', minWidth: '90px', textAlign: 'center' }}>Action</th>
+              )}
             </tr>
           </thead>
           <tbody key={activeTab} className="tab-content-fade">
             {paginatedStudents.length === 0 ? (
               <tr>
-                <td colSpan="10" className="empty-state">
+                <td colSpan={isAdmin ? 10 : 9} className="empty-state">
                   <div className="empty-state-icon">
                     <SearchX size={32} color="var(--text-light)" />
                   </div>
@@ -754,25 +757,27 @@ export function LeaderboardTable({
                       </>
                     )}
 
-                    {/* Actions */}
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                        <button
-                          className="btn-icon"
-                          title="Edit coder"
-                          onClick={() => onEditStudent && onEditStudent(st)}
-                        >
-                          <Edit2 size={15} />
-                        </button>
-                        <button
-                          className="btn-icon delete"
-                          title="Delete coder"
-                          onClick={() => onDeleteStudent && onDeleteStudent(st.rollNo || st.id)}
-                        >
-                          <Trash2 size={15} />
-                        </button>
-                      </div>
-                    </td>
+                    {/* Actions - Only visible to authenticated Admin */}
+                    {isAdmin && (
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                          <button
+                            className="btn-icon"
+                            title="Edit coder"
+                            onClick={() => onEditStudent && onEditStudent(st)}
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            className="btn-icon delete"
+                            title="Delete coder"
+                            onClick={() => onDeleteStudent && onDeleteStudent(st.rollNo || st.id)}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 );
               })

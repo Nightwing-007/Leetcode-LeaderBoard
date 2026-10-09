@@ -8,6 +8,7 @@ import { TvModeSlideshow } from './components/TvModeSlideshow';
 import { ExcelUploaderModal } from './components/ExcelUploaderModal';
 import { StudentModal } from './components/StudentModal';
 import { DataEditorModal } from './components/DataEditorModal';
+import { LoginModal } from './components/LoginModal';
 import { INITIAL_STUDENTS_DATA, calculateCompositeScore } from './data/sampleData';
 import {
   fetchLeaderboard,
@@ -15,7 +16,9 @@ import {
   fetchDashboardStatistics,
   fetchAnalyticsSummary,
   deleteStudentFromBackend,
-  saveStudentToBackend
+  saveStudentToBackend,
+  getAdminToken,
+  removeAdminToken
 } from './api/leaderboardApi';
 import {
   dbGetAllStudents,
@@ -25,6 +28,8 @@ import {
 } from './db/database';
 
 export default function App() {
+  const [isAdmin, setIsAdmin] = useState(() => Boolean(getAdminToken()));
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [students, setStudents] = useState([]);
   const [activeTab, setActiveTab] = useState('college'); // 'college' | 'year' | 'department' | 'dept_year' | 'class' | 'pgp' | 'leetcode' | 'weekly'
   const [backendAvailable, setBackendAvailable] = useState(false);
@@ -208,10 +213,18 @@ export default function App() {
     }
   };
 
+  const handleLogout = () => {
+    removeAdminToken();
+    setIsAdmin(false);
+  };
+
   return (
     <div className="app-root">
       {/* SECE College Header */}
       <Header
+        isAdmin={isAdmin}
+        onOpenLogin={() => setIsLoginOpen(true)}
+        onLogout={handleLogout}
         onOpenUpload={() => setIsUploadOpen(true)}
         onOpenAddModal={() => { setStudentToEdit(null); setIsEditorOpen(true); }}
         onToggleTvMode={() => setTvMode(true)}
@@ -259,6 +272,7 @@ export default function App() {
           onSelectStudent={(st) => setSelectedStudent(st)}
           onEditStudent={(st) => { setStudentToEdit(st); setIsEditorOpen(true); }}
           onDeleteStudent={handleDeleteStudent}
+          isAdmin={isAdmin}
           serverPage={backendAvailable ? serverPage : undefined}
           serverTotalPages={backendAvailable ? serverTotalPages : undefined}
           serverTotalElements={backendAvailable ? serverTotalElements : undefined}
@@ -294,6 +308,16 @@ export default function App() {
       <StudentModal
         student={selectedStudent}
         onClose={() => setSelectedStudent(null)}
+        isAdmin={isAdmin}
+        onEdit={(st) => { setStudentToEdit(st); setIsEditorOpen(true); }}
+        onDelete={handleDeleteStudent}
+      />
+
+      {/* Admin Login Modal */}
+      <LoginModal
+        isOpen={isLoginOpen}
+        onClose={() => setIsLoginOpen(false)}
+        onLoginSuccess={() => setIsAdmin(true)}
       />
 
       {/* Data Add / Edit Record Modal */}

@@ -1,0 +1,25 @@
+package com.sece.leaderboard.controller;
+
+import com.sece.leaderboard.dto.LoginRequest;
+import com.sece.leaderboard.dto.LoginResponse;
+import com.sece.leaderboard.service.AuthService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/v1/auth")
+public class AuthController {
+
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
+        LoginResponse response = authService.authenticate(loginRequest);
+        return ResponseEntity.ok(response);
+    }
+}

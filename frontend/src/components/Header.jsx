@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Tv, Upload, Download, Moon, Sun, PlusCircle, Volume2, VolumeX, Users } from 'lucide-react';
+import { Tv, Upload, Download, Moon, Sun, PlusCircle, Volume2, VolumeX, Users, LogIn, LogOut, ShieldCheck } from 'lucide-react';
 import { generateLeetcodeTemplate } from '../utils/excelParser';
 
 export function Header({
+  isAdmin,
+  onOpenLogin,
+  onLogout,
   onOpenUpload,
   onOpenAddModal,
   onToggleTvMode,
@@ -66,15 +69,30 @@ export function Header({
             <span>Smart TV Mode</span>
           </button>
 
-          {/* Upload Data */}
-          <button
-            className="btn btn-navy"
-            onClick={onOpenUpload}
-            title="Upload LeetCode Report Excel file"
-          >
-            <Upload size={16} />
-            <span>Import Report</span>
-          </button>
+          {/* Admin Protected Action Buttons */}
+          {isAdmin && (
+            <>
+              {/* Upload Report */}
+              <button
+                className="btn btn-navy"
+                onClick={onOpenUpload}
+                title="Upload Coding &amp; Placement Report Excel file"
+              >
+                <Upload size={16} />
+                <span>Upload Report</span>
+              </button>
+
+              {/* Add Record */}
+              <button
+                className="btn btn-navy"
+                onClick={onOpenAddModal}
+                title="Add student record manually"
+              >
+                <PlusCircle size={16} />
+                <span>Add Coder</span>
+              </button>
+            </>
+          )}
 
           {/* Download LeetCode Template */}
           <button
@@ -86,15 +104,28 @@ export function Header({
             <span>LC Template</span>
           </button>
 
-          {/* Add Record */}
-          <button
-            className="btn btn-navy"
-            onClick={onOpenAddModal}
-            title="Add student record manually"
-          >
-            <PlusCircle size={16} />
-            <span>Add Coder</span>
-          </button>
+          {/* Admin Login / Logout Toggle */}
+          {isAdmin ? (
+            <button
+              className="btn btn-navy"
+              style={{ border: '1px solid rgba(239, 68, 68, 0.4)', color: '#EF4444' }}
+              onClick={onLogout}
+              title="Sign out of Admin session"
+            >
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
+          ) : (
+            <button
+              className="btn btn-navy"
+              style={{ border: '1px solid var(--sece-gold-500)', color: 'var(--sece-gold-500)' }}
+              onClick={onOpenLogin}
+              title="Sign in as Administrator"
+            >
+              <LogIn size={16} />
+              <span>Admin Login</span>
+            </button>
+          )}
 
           {/* Sound Celebration Toggle */}
           <button
