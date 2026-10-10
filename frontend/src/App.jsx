@@ -7,7 +7,6 @@ import { DepartmentView } from './components/DepartmentView';
 import { TvModeSlideshow } from './components/TvModeSlideshow';
 import { ExcelUploaderModal } from './components/ExcelUploaderModal';
 import { DataEditorModal } from './components/DataEditorModal';
-import { LoginModal } from './components/LoginModal';
 import { INITIAL_STUDENTS_DATA, calculateCompositeScore } from './data/sampleData';
 import {
   fetchLeaderboard,
@@ -243,15 +242,12 @@ export default function App() {
       {/* SECE College Header */}
       <Header
         isAdmin={isAdmin}
-        onOpenLogin={() => setIsLoginOpen(true)}
+        onLoginSuccess={() => setIsAdmin(true)}
         onLogout={handleLogout}
         onOpenUpload={() => setIsUploadOpen(true)}
-        onOpenAddModal={() => { setStudentToEdit(null); setIsEditorOpen(true); }}
         onToggleTvMode={() => setTvMode(true)}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
-        soundEnabled={soundEnabled}
-        setSoundEnabled={setSoundEnabled}
         totalCoders={dashboardStats?.totalStudents ?? students.length}
       />
 
@@ -323,13 +319,6 @@ export default function App() {
         onClose={() => setIsUploadOpen(false)}
         onUploadSuccess={handleUploadSuccess}
         currentStudents={students}
-      />
-
-      {/* Admin Login Modal */}
-      <LoginModal
-        isOpen={isLoginOpen}
-        onClose={() => setIsLoginOpen(false)}
-        onLoginSuccess={() => setIsAdmin(true)}
       />
 
       {/* Data Add / Edit Record Modal */}

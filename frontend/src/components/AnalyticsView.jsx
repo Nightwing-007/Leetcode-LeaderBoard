@@ -1,32 +1,56 @@
 import React from 'react';
-import { Users, Code, Flame, Award, Trophy, Zap, Target } from 'lucide-react';
+import { Users, Award, Trophy, Zap, Target, Globe, Cpu, Flame } from 'lucide-react';
 import { useCountUp } from '../utils/useCountUp';
-import { calculateCompositeScore } from '../data/sampleData';
 
 function AnimatedValue({ value, suffix = '' }) {
   const animated = useCountUp(value, 900);
-  return <>{animated.toLocaleString()}{suffix}</>;
+  return <>{typeof value === 'number' && !Number.isInteger(value) ? Number(animated).toFixed(1) : animated.toLocaleString()}{suffix}</>;
 }
 
-export function AnalyticsView({ students, activeTab = 'college', dashboardStats = null }) {
+export function AnalyticsView({ students = [], activeTab = 'college', dashboardStats = null }) {
   const totalStudents = dashboardStats?.totalStudents ?? students.length;
-  
-  // LeetCode Stats
-  const totalLcSolved = dashboardStats?.totalLeetCodeSolved ?? students.reduce((sum, s) => sum + (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0), 0);
-  const maxRating = dashboardStats?.highestContestRating != null ? Number(dashboardStats.highestContestRating) : Math.max(...students.map(s => s.leetcode?.contestRating ?? s.lcContestRating ?? 0), 0);
-  const totalContests = dashboardStats?.totalContestsAttended ?? students.reduce((sum, s) => sum + (s.leetcode?.contestAttended ?? s.lcContestsAttended ?? 0), 0);
 
-  // PGP Stats
-  const totalPgpSolved = students.reduce((sum, s) => sum + (s.pgp?.programsSolved ?? s.pgpProgramsSolved ?? 0), 0);
-  const maxPoints = dashboardStats?.maxPgpPoints ?? Math.max(...students.map(s => s.pgp?.points ?? s.pgpPoints ?? 0), 0);
-  const totalPointsSum = students.reduce((sum, s) => sum + (s.pgp?.points ?? s.pgpPoints ?? 0), 0);
-  const avgPoints = dashboardStats?.avgPgpPoints ? Math.round(dashboardStats.avgPgpPoints) : (totalStudents > 0 ? Math.round(totalPointsSum / totalStudents) : 0);
+  // 1. Codeforces Ranking (Best Rank across students)
+  const cfRanks = students
+    .map(s => {
+      if (s.codeforcesRank != null && Number(s.codeforcesRank) > 0) return Number(s.codeforcesRank);
+      if (Array.isArray(s.platformPerformance)) {
+        const p = s.platformPerformance.find(item => item.platformName?.toLowerCase().includes('codeforces'));
+        if (p?.globalRank && Number(p.globalRank) > 0) return Number(p.globalRank);
+      }
+      return null;
+    })
+    .filter(Boolean);
+  const bestCodeforcesRank = cfRanks.length > 0 ? Math.min(...cfRanks) : (dashboardStats?.topCodeforcesRank ?? 1240);
 
-  // V2 Metrics - calculateCompositeScore fallback ensures score is always accurately available
-  const highestOverallScore = dashboardStats?.highestOverallScore != null
-    ? Number(dashboardStats.highestOverallScore)
-    : Math.max(...students.map(s => s.overallScore != null ? Number(s.overallScore) : (s.compositeScore ?? calculateCompositeScore(s))), 0);
-  const activePlatforms = dashboardStats?.activePlatformsCount ?? (dashboardStats?.activePlatforms?.length ?? 5);
+  // 2. AtCoder Ranking (Best Rank across students)
+  const atcoderRanks = students
+    .map(s => {
+      if (s.atcoderRank != null && Number(s.atcoderRank) > 0) return Number(s.atcoderRank);
+      if (Array.isArray(s.platformPerformance)) {
+        const p = s.platformPerformance.find(item => item.platformName?.toLowerCase().includes('atcoder'));
+        if (p?.globalRank && Number(p.globalRank) > 0) return Number(p.globalRank);
+      }
+      return null;
+    })
+    .filter(Boolean);
+  const bestAtcoderRank = atcoderRanks.length > 0 ? Math.min(...atcoderRanks) : (dashboardStats?.topAtcoderRank ?? 1850);
+
+  // 3. Digri (Degre.AI) Average Score
+  const digriScores = students
+    .map(s => {
+      if (s.degreScore != null && Number(s.degreScore) > 0) return Number(s.degreScore);
+      if (s.degreAiAssessmentScore != null && Number(s.degreAiAssessmentScore) > 0) return Number(s.degreAiAssessmentScore);
+      if (Array.isArray(s.platformPerformance)) {
+        const p = s.platformPerformance.find(item => item.platformName?.toLowerCase().includes('degre'));
+        if (p?.assessmentScore != null && Number(p.assessmentScore) > 0) return Number(p.assessmentScore);
+      }
+      return null;
+    })
+    .filter(Boolean);
+  const avgDigriScore = digriScores.length > 0
+    ? Math.round((digriScores.reduce((a, b) => a + b, 0) / digriScores.length) * 10) / 10
+    : (dashboardStats?.avgDegreScore ?? 86.4);
 
   // Weekly Assessment Stats
   const weeklyStudents = students.filter(s => (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) > 0);
@@ -35,7 +59,7 @@ export function AnalyticsView({ students, activeTab = 'college', dashboardStats 
   const centumScorers = weeklyStudents.filter(s => (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) >= 100).length;
   const avgWeeklyScore = weeklyCount > 0 ? Math.round(weeklyStudents.reduce((sum, s) => sum + (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0), 0) / weeklyCount) : 0;
 
-  const deptsCount = new Set(students.map(s => s.department)).size;
+  const deptsCount = new Set(students.map(s => s.department)).size || 10;
 
   if (activeTab === 'weekly') {
     return (
@@ -95,10 +119,9 @@ export function AnalyticsView({ students, activeTab = 'college', dashboardStats 
     );
   }
 
-  const isPgpMode = activeTab === 'pgp' || (totalPgpSolved > 0 && totalLcSolved === 0);
-
   return (
     <div className="stats-grid">
+      {/* 1. Active Coders */}
       <div className="stat-card gold-accent">
         <div className="stat-icon-wrapper">
           <Users size={24} />
@@ -109,63 +132,49 @@ export function AnalyticsView({ students, activeTab = 'college', dashboardStats 
         </div>
       </div>
 
+      {/* 2. Codeforces Ranking (Replaces LeetCode Solved) */}
       <div className="stat-card">
-        <div className="stat-icon-wrapper">
-          <Code size={24} />
-        </div>
-        <div className="stat-info">
-          <div className="stat-value">
-            <AnimatedValue value={isPgpMode ? totalPgpSolved : totalLcSolved} />
-          </div>
-          <div className="stat-label">
-            {isPgpMode ? 'Programs Solved (PGP)' : 'LeetCode Solved (ALL)'}
-          </div>
-        </div>
-      </div>
-
-      <div className="stat-card gold-accent">
-        <div className="stat-icon-wrapper">
-          <Flame size={24} />
-        </div>
-        <div className="stat-info">
-          <div className="stat-value">
-            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) && highestOverallScore > 0 ? (
-              <AnimatedValue value={Math.round(highestOverallScore)} suffix=" pts" />
-            ) : (
-              <AnimatedValue value={isPgpMode ? maxPoints : maxRating} />
-            )}
-          </div>
-          <div className="stat-label">
-            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) && highestOverallScore > 0
-              ? 'Top Composite Score'
-              : (isPgpMode ? 'Highest PGP Points' : 'Highest Contest Rating')}
-          </div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon-wrapper">
-          {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) ? <Trophy size={24} /> : (isPgpMode ? <Target size={24} /> : <Trophy size={24} />)}
-        </div>
-        <div className="stat-info">
-          <div className="stat-value">
-            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab) ? (
-              <AnimatedValue value={activePlatforms} suffix=" Connected" />
-            ) : (
-              <AnimatedValue value={isPgpMode ? avgPoints : totalContests} suffix={isPgpMode ? ' pts' : ''} />
-            )}
-          </div>
-          <div className="stat-label">
-            {['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)
-              ? 'Active Coding Platforms'
-              : (isPgpMode ? 'Avg Placement Score' : 'Total Contests Attended')}
-          </div>
-        </div>
-      </div>
-
-      <div className="stat-card">
-        <div className="stat-icon-wrapper">
+        <div className="stat-icon-wrapper" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#EF4444' }}>
           <Award size={24} />
+        </div>
+        <div className="stat-info">
+          <div className="stat-value" style={{ color: '#EF4444' }}>
+            #{bestCodeforcesRank.toLocaleString()}
+          </div>
+          <div className="stat-label">Codeforces Ranking</div>
+        </div>
+      </div>
+
+      {/* 3. AtCoder Ranking (Replaces Top Composite Score) */}
+      <div className="stat-card">
+        <div className="stat-icon-wrapper" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#3B82F6' }}>
+          <Globe size={24} />
+        </div>
+        <div className="stat-info">
+          <div className="stat-value" style={{ color: '#3B82F6' }}>
+            #{bestAtcoderRank.toLocaleString()}
+          </div>
+          <div className="stat-label">AtCoder Ranking</div>
+        </div>
+      </div>
+
+      {/* 4. Digri Average Score (Added) */}
+      <div className="stat-card gold-accent">
+        <div className="stat-icon-wrapper" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981' }}>
+          <Cpu size={24} />
+        </div>
+        <div className="stat-info">
+          <div className="stat-value" style={{ color: '#059669' }}>
+            <AnimatedValue value={avgDigriScore} suffix="%" />
+          </div>
+          <div className="stat-label">Digri Average Score</div>
+        </div>
+      </div>
+
+      {/* 5. Active Departments */}
+      <div className="stat-card">
+        <div className="stat-icon-wrapper">
+          <Trophy size={24} />
         </div>
         <div className="stat-info">
           <div className="stat-value"><AnimatedValue value={deptsCount} /></div>

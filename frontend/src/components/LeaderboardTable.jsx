@@ -534,7 +534,6 @@ export function LeaderboardTable({
                   <th style={{ minWidth: '140px' }}>Composite Score</th>
                   <th style={{ minWidth: '130px' }}>LeetCode Rank</th>
                   <th style={{ minWidth: '120px' }}>SkillRack Pts</th>
-                  <th style={{ minWidth: '160px' }}>Problems Solved</th>
                 </>
               )}
 
@@ -570,16 +569,12 @@ export function LeaderboardTable({
                   <th style={{ minWidth: '130px' }}>SkillRack Rank</th>
                 </>
               )}
-
-              {isAdmin && (
-                <th style={{ width: '90px', minWidth: '90px', textAlign: 'center' }}>Action</th>
-              )}
             </tr>
           </thead>
           <tbody key={activeTab} className="tab-content-fade">
             {paginatedStudents.length === 0 ? (
               <tr>
-                <td colSpan={isAdmin ? 10 : 9} className="empty-state">
+                <td colSpan={10} className="empty-state">
                   <div className="empty-state-icon">
                     <SearchX size={32} color="var(--text-light)" />
                   </div>
@@ -657,11 +652,6 @@ export function LeaderboardTable({
                               <div className="coder-name">{st.name}</div>
                               <div className="coder-meta">
                                 <span>{st.rollNo || st.registerNumber}</span>
-                                {lcId && (
-                                  <span style={{ color: 'var(--sece-navy-600)', fontWeight: 600 }}>
-                                    • @{lcId}
-                                  </span>
-                                )}
                               </div>
                             </div>
                           </div>
@@ -759,11 +749,6 @@ export function LeaderboardTable({
                               {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
                             </span>
                           </td>
-                          <td>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
-                              {lcSolved} LC / {pgpSolved} SkillRack
-                            </span>
-                          </td>
                         </>
                       )}
 
@@ -848,28 +833,6 @@ export function LeaderboardTable({
                             </span>
                           </td>
                         </>
-                      )}
-
-                      {/* Actions - Only visible to authenticated Admin */}
-                      {isAdmin && (
-                        <td onClick={(e) => e.stopPropagation()}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                            <button
-                              className="btn-icon"
-                              title="Edit coder"
-                              onClick={() => onEditStudent && onEditStudent(st)}
-                            >
-                              <Edit2 size={15} />
-                            </button>
-                            <button
-                              className="btn-icon delete"
-                              title="Delete coder"
-                              onClick={() => onDeleteStudent && onDeleteStudent(st.rollNo || st.id)}
-                            >
-                              <Trash2 size={15} />
-                            </button>
-                          </div>
-                        </td>
                       )}
                     </tr>
 

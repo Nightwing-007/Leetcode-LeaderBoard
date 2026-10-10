@@ -152,7 +152,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <Trophy size={26} />
           <h2 className="section-title" style={{ margin: 0 }}>
-            <span>Hall of Fame • SECE Top Champions</span>
+            <span>Elite Institutional Coders</span>
           </h2>
         </div>
         <button className="btn btn-gold" onClick={triggerCelebration} style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}>

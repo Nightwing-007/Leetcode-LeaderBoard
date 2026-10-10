@@ -168,7 +168,7 @@ export function TvModeSlideshow({ students = [], onCloseTvMode, soundEnabled }) 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <Trophy size={32} color="#D99B00" />
                 <h2 style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--sece-navy-900)', margin: 0 }}>
-                  Top 10 College Champions • Hall of Fame
+                  Top 10 College Champions • Elite Institutional Coders
                 </h2>
               </div>
               <span className="dept-tag" style={{ background: 'var(--sece-gold-500)', color: '#002855', fontWeight: 800, fontSize: '0.9rem', padding: '0.4rem 1rem' }}>
