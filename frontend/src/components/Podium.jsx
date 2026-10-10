@@ -1,6 +1,7 @@
 import React from 'react';
 import { Crown, Trophy, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { calculateCompositeScore } from '../data/sampleData';
 
 export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEnabled }) {
   if (!top3 || top3.length < 3) return null;
@@ -62,8 +63,8 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
             </div>
             <div className="lbl">PGP Points</div>
           </div>
-          <div className="p-stat" style={isFirst ? { background: 'rgba(0, 51, 102, 0.1)' } : {}}>
-            <div className="val" style={isFirst ? { color: '#003366', fontSize: '1.15rem' } : {}}>
+          <div className="p-stat" style={isFirst ? { background: 'rgba(0, 86, 179, 0.12)' } : {}}>
+            <div className="val" style={isFirst ? { color: 'var(--sece-navy-500)', fontSize: '1.15rem' } : {}}>
               {solved}
             </div>
             <div className="lbl">Programs Solved</div>
@@ -82,10 +83,10 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
 
     // Institutional Topper Views (College, Year, Dept, Class)
     if (['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)) {
-      const compScore = student.overallScore != null ? Number(student.overallScore) : (student.compositeScore ?? 0);
+      const compScore = student.overallScore != null ? Number(student.overallScore) : (student.compositeScore ?? calculateCompositeScore(student));
       const lcSolved = student.leetcode?.solvedTotal ?? student.lcSolvedTotal ?? 0;
       const pgpPts = student.pgp?.points ?? student.pgpPoints ?? 0;
-      const rankNum = student.rank || (isFirst ? 1 : null);
+      const rankNum = student.rank ?? (isFirst ? 1 : (student === second ? 2 : 3));
 
       return (
         <div className="podium-stats-grid">
@@ -95,9 +96,9 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
             </div>
             <div className="lbl">Composite Score</div>
           </div>
-          <div className="p-stat" style={isFirst ? { background: 'rgba(0, 51, 102, 0.1)' } : {}}>
-            <div className="val" style={isFirst ? { color: '#003366', fontSize: '1.15rem' } : {}}>
-              {rankNum ? `#${rankNum}` : 'Topper'}
+          <div className="p-stat" style={isFirst ? { background: 'rgba(0, 86, 179, 0.12)' } : {}}>
+            <div className="val" style={isFirst ? { color: 'var(--sece-navy-500)', fontSize: '1.15rem' } : {}}>
+              #{rankNum}
             </div>
             <div className="lbl">Topper Rank</div>
           </div>
@@ -127,8 +128,8 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
           </div>
           <div className="lbl">LeetCode Solved</div>
         </div>
-        <div className="p-stat" style={isFirst ? { background: 'rgba(0, 51, 102, 0.1)' } : {}}>
-          <div className="val" style={isFirst ? { color: '#003366', fontSize: '1.15rem' } : {}}>
+        <div className="p-stat" style={isFirst ? { background: 'rgba(0, 86, 179, 0.12)' } : {}}>
+          <div className="val" style={isFirst ? { color: 'var(--sece-navy-500)', fontSize: '1.15rem' } : {}}>
             {Math.round(Number(rating))}
           </div>
           <div className="lbl">Contest Rating</div>
@@ -162,7 +163,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
 
       <div className="podium-container">
         {/* Rank 2 - Silver */}
-        <div className="podium-card rank-2" onClick={() => onSelectStudent(second)}>
+        <div className="podium-card rank-2" onClick={() => onSelectStudent && onSelectStudent(second)}>
           <div className="rank-badge">#2</div>
           <div className="avatar-wrapper">
             {second.name ? second.name.charAt(0) : 'S'}
@@ -173,7 +174,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
         </div>
 
         {/* Rank 1 - Gold Champion */}
-        <div className="podium-card rank-1" onClick={() => onSelectStudent(first)}>
+        <div className="podium-card rank-1" onClick={() => onSelectStudent && onSelectStudent(first)}>
           <Crown size={38} className="crown-icon" />
           <div className="rank-badge">#1</div>
           <div className="avatar-wrapper">
@@ -187,7 +188,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
         </div>
 
         {/* Rank 3 - Bronze */}
-        <div className="podium-card rank-3" onClick={() => onSelectStudent(third)}>
+        <div className="podium-card rank-3" onClick={() => onSelectStudent && onSelectStudent(third)}>
           <div className="rank-badge">#3</div>
           <div className="avatar-wrapper">
             {third.name ? third.name.charAt(0) : 'S'}

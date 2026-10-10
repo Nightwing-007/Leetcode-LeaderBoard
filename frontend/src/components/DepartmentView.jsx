@@ -1,18 +1,18 @@
 import React from 'react';
 import { Award, BarChart2, Trophy } from 'lucide-react';
-import { COLLEGE_DEPARTMENTS } from '../data/sampleData';
+import { COLLEGE_DEPARTMENTS, calculateCompositeScore } from '../data/sampleData';
 
-export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' }) {
+export function DepartmentView({ students, onSelectStudent, activeTab = 'college' }) {
   const depts = COLLEGE_DEPARTMENTS.filter(d => d !== 'All');
+  const isWeekly = activeTab === 'weekly';
+  const isTopperTab = ['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab);
+  const isPgp = activeTab === 'pgp' || (!isWeekly && !isTopperTab && activeTab !== 'leetcode' && students.some(s => (s.pgp?.points ?? s.pgpPoints ?? 0) > 0));
 
   const deptStats = depts.map(deptName => {
     const deptStudents = students.filter(s => s.department === deptName);
     const count = deptStudents.length;
 
     if (count === 0) return null;
-
-    const isWeekly = activeTab === 'weekly';
-    const isPgp = activeTab === 'pgp' || (!isWeekly && deptStudents.some(s => (s.pgp?.points ?? s.pgpPoints ?? 0) > 0));
 
     let topStudent;
     let totalMetric = 0;
@@ -21,7 +21,15 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
     let metricLabel = 'Top Solved';
     let avgLabel = 'Avg Rating';
 
-    if (isWeekly) {
+    if (isTopperTab) {
+      const getScore = (s) => s.overallScore != null ? Number(s.overallScore) : (s.compositeScore ?? calculateCompositeScore(s));
+      topStudent = [...deptStudents].sort((a, b) => getScore(b) - getScore(a))[0];
+      topScore = topStudent ? Math.round(getScore(topStudent)) : 0;
+      avgScore = Math.round(deptStudents.reduce((sum, s) => sum + getScore(s), 0) / count);
+      totalMetric = deptStudents.reduce((sum, s) => sum + (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0) + (s.pgp?.programsSolved ?? s.pgpProgramsSolved ?? 0), 0);
+      metricLabel = 'Topper Score';
+      avgLabel = 'Avg Score';
+    } else if (isWeekly) {
       topStudent = [...deptStudents].sort((a, b) => {
         const sa = a.weeklyAssessment?.score ?? a.weeklyScore ?? 0;
         const sb = b.weeklyAssessment?.score ?? b.weeklyScore ?? 0;
@@ -59,16 +67,14 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
       metricLabel,
       avgLabel,
       isPgp,
-      isWeekly
+      isWeekly,
+      isTopperTab
     };
   }).filter(Boolean);
 
   // Sort departments by totalSolved descending for ranking
   const sortedDeptStats = [...deptStats].sort((a, b) => (b.totalSolved ?? 0) - (a.totalSolved ?? 0));
   const maxTotalSolved = Math.max(...deptStats.map(d => d.totalSolved ?? d.totalMetric ?? 0), 1);
-
-  const isWeekly = activeTab === 'weekly';
-  const isPgp = activeTab === 'pgp';
 
   // Build rank map for medal display
   const deptRankMap = {};
@@ -91,7 +97,7 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
             <div
               key={ds.dept}
               className="dept-champion-card"
-              onClick={() => ds.topStudent && onSelectStudent(ds.topStudent)}
+              onClick={() => ds.topStudent && onSelectStudent && onSelectStudent(ds.topStudent)}
             >
               {/* Department rank medal */}
               {deptRank <= 3 && (
@@ -125,7 +131,7 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
 
               <div style={{ width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', paddingTop: '0.75rem', borderTop: '1px dashed var(--border-color)' }}>
                 <div>
-                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--sece-navy-700)' }}>
+                  <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--sece-navy-500)' }}>
                     {(ds.topScore ?? 0).toLocaleString()}
                   </div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -153,7 +159,7 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'pgp' })
           <span>
             {isWeekly 
               ? 'Total Coding Problems Solved by Department (Weekly Test)' 
-              : (isPgp ? 'Total Solved Programs by Department (PGP)' : 'Total LeetCode Problems Solved by Department')}
+              : (isPgp ? 'Total Solved Programs by Department (SkillRack / PGP)' : (isTopperTab ? 'Total Solved Coding Problems by Department' : 'Total LeetCode Problems Solved by Department'))}
           </span>
         </h3>
 

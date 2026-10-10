@@ -61,8 +61,10 @@ export async function dbReplaceAllStudents(studentsArray) {
     // Clear existing store to store strictly the latest dataset
     store.clear();
 
-    studentsArray.forEach(student => {
-      store.put(student);
+    (studentsArray || []).forEach(student => {
+      if (!student) return;
+      const roll = String(student.rollNo || student.registerNumber || student.id || `SECE_${Math.random().toString(36).substring(2, 9)}`).trim().toUpperCase();
+      store.put({ ...student, rollNo: roll });
     });
 
     tx.oncomplete = () => resolve(studentsArray);
@@ -79,8 +81,10 @@ export async function dbUpsertStudents(studentsArray) {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
 
-    studentsArray.forEach(student => {
-      store.put(student);
+    (studentsArray || []).forEach(student => {
+      if (!student) return;
+      const roll = String(student.rollNo || student.registerNumber || student.id || `SECE_${Math.random().toString(36).substring(2, 9)}`).trim().toUpperCase();
+      store.put({ ...student, rollNo: roll });
     });
 
     tx.oncomplete = () => resolve(true);
@@ -96,7 +100,8 @@ export async function dbSaveStudent(student) {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORE_NAME, 'readwrite');
     const store = tx.objectStore(STORE_NAME);
-    const req = store.put(student);
+    const roll = String(student.rollNo || student.registerNumber || student.id || `SECE_${Math.random().toString(36).substring(2, 9)}`).trim().toUpperCase();
+    const req = store.put({ ...student, rollNo: roll });
 
     req.onsuccess = () => resolve(true);
     req.onerror = () => reject(req.error);

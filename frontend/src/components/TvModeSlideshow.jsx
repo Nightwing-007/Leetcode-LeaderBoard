@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { X, Trophy, Award, Flame, Star, Play, Pause, Users, Zap } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { COLLEGE_DEPARTMENTS, COLLEGE_BATCHES } from '../data/sampleData';
+import { COLLEGE_DEPARTMENTS, COLLEGE_BATCHES, calculateCompositeScore } from '../data/sampleData';
 
-export function TvModeSlideshow({ students, onCloseTvMode, soundEnabled }) {
+export function TvModeSlideshow({ students = [], onCloseTvMode, soundEnabled }) {
   const [activeSlide, setActiveSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
 
   const SLIDE_DURATION = 9000;
 
-  // Helper score calculation
+  // Helper score calculation - seamlessly prioritize Postgres View/Composite scores
   const getStudentScore = (s) => {
+    if (s.overallScore != null) return Number(s.overallScore);
+    if (s.compositeScore != null) return Number(s.compositeScore);
     const pgpPts = s.pgp?.points ?? s.pgpPoints ?? 0;
     const lcSolved = s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0;
     const lcRating = s.leetcode?.contestRating ?? s.lcContestRating ?? 1500;
@@ -20,6 +22,10 @@ export function TvModeSlideshow({ students, onCloseTvMode, soundEnabled }) {
   };
 
   const getStudentDisplayStat = (s) => {
+    if (s.overallScore != null || s.compositeScore != null) {
+      const score = s.overallScore != null ? Number(s.overallScore) : Number(s.compositeScore);
+      return `⭐ ${Math.round(score).toLocaleString()} pts`;
+    }
     const pgpPts = s.pgp?.points ?? s.pgpPoints ?? 0;
     const lcSolved = s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0;
     if (pgpPts > 0) return `${pgpPts.toLocaleString()} PGP pts`;

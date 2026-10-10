@@ -64,6 +64,11 @@ export function LeaderboardTable({
     setCurrentPage(1);
   }, [activeTab, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery, sortBy]);
 
+  // Reset sort when tab switches
+  useEffect(() => {
+    setSortBy('rank');
+  }, [activeTab]);
+
   // Determine if this is a PostgreSQL Topper View tab
   const isTopperTab = ['college', 'year', 'department', 'dept_year', 'class'].includes(activeTab);
 
@@ -115,7 +120,7 @@ export function LeaderboardTable({
         if (sortBy === 'lc_solved') {
           const sa = a.leetcode?.solvedTotal ?? a.lcSolvedTotal ?? 0;
           const sb = b.leetcode?.solvedTotal ?? b.lcSolvedTotal ?? 0;
-          return cb - sa;
+          return sb - sa;
         }
         if (sortBy === 'lc_rating') {
           const ra = a.leetcode?.contestRating ?? a.lcContestRating ?? 0;
@@ -161,11 +166,14 @@ export function LeaderboardTable({
       }
 
       // Topper Views and Composite Rank
+      const ca = a.overallScore != null ? Number(a.overallScore) : (a.compositeScore ?? calculateCompositeScore(a));
+      const cb = b.overallScore != null ? Number(b.overallScore) : (b.compositeScore ?? calculateCompositeScore(b));
+      if (sortBy === 'score') {
+        return cb - ca;
+      }
       if (a.rank !== undefined && b.rank !== undefined && a.rank !== null && b.rank !== null) {
         return a.rank - b.rank;
       }
-      const ca = a.overallScore != null ? Number(a.overallScore) : (a.compositeScore ?? calculateCompositeScore(a));
-      const cb = b.overallScore != null ? Number(b.overallScore) : (b.compositeScore ?? calculateCompositeScore(b));
       return cb - ca;
     });
   }, [filteredStudents, activeTab, sortBy]);
@@ -315,7 +323,7 @@ export function LeaderboardTable({
           <button
             className="btn"
             style={{
-              fontSize: '0.825rem',
+              fontSize: '0.825rem', 
               padding: '0.45rem 0.8rem',
               borderRadius: '10px',
               border: 'none',

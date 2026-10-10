@@ -128,9 +128,30 @@ export default function App() {
     loadData(newPage, activeTab);
   };
 
+  // Synchronized client-side filtering across the entire dashboard
+  const filteredStudents = useMemo(() => {
+    if (backendAvailable) return students;
+    const q = (searchQuery || '').toLowerCase().trim();
+    return students.filter(st => {
+      const matchesDept = selectedDept === 'All' || st.department === selectedDept;
+      const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
+      const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
+      const matchesSection = selectedSection === 'All' || (st.section && st.section.toUpperCase() === selectedSection.toUpperCase());
+      const matchesGender = selectedGender === 'All' || st.gender === selectedGender;
+      const matchesSearch = !q ||
+        st.name?.toLowerCase().includes(q) ||
+        st.rollNo?.toLowerCase().includes(q) ||
+        st.registerNumber?.toLowerCase().includes(q) ||
+        (st.leetcode?.leetcodeId && st.leetcode.leetcodeId.toLowerCase().includes(q)) ||
+        (st.leetcodeId && st.leetcodeId.toLowerCase().includes(q));
+      return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender && matchesSearch;
+    });
+  }, [backendAvailable, students, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
+
   // Compute Top 3 for Hall of Fame Podium with React.useMemo for instant updates
   const top3Rankers = useMemo(() => {
-    return [...students]
+    const listToRank = filteredStudents.length > 0 ? filteredStudents : students;
+    return [...listToRank]
       .sort((a, b) => {
         if (['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)) {
           if (a.rank !== undefined && b.rank !== undefined && a.rank !== null && b.rank !== null) {
@@ -163,7 +184,7 @@ export default function App() {
         return cb - ca;
       })
       .slice(0, 3);
-  }, [students, activeTab]);
+  }, [students, filteredStudents, activeTab]);
 
   // Handler when new Excel file is uploaded
   const handleUploadSuccess = async (newStudentsList, detectedType) => {
@@ -239,7 +260,7 @@ export default function App() {
       <main className="main-wrapper">
         {/* KPI Institutional Metrics */}
         <AnalyticsView
-          students={students}
+          students={filteredStudents}
           activeTab={activeTab}
           dashboardStats={dashboardStats}
         />

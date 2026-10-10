@@ -12,13 +12,30 @@ export function CategoryBadge({ category, score, style = {} }) {
   let cat = category;
   if (!cat && score != null) {
     const s = Number(score);
-    if (s >= 80) cat = 'Elite';
-    else if (s >= 60) cat = 'Specialist';
-    else if (s >= 40) cat = 'Challenger';
-    else if (s >= 20) cat = 'Solver';
-    else cat = 'Starter';
+    if (s >= 500) {
+      if (s >= 3500) cat = 'Elite';
+      else if (s >= 2500) cat = 'Specialist';
+      else if (s >= 1500) cat = 'Challenger';
+      else if (s >= 800) cat = 'Solver';
+      else cat = 'Starter';
+    } else {
+      if (s >= 80) cat = 'Elite';
+      else if (s >= 60) cat = 'Specialist';
+      else if (s >= 40) cat = 'Challenger';
+      else if (s >= 20) cat = 'Solver';
+      else cat = 'Starter';
+    }
   }
-  if (!cat) cat = 'Starter';
+
+  let normalizedKey = 'Starter';
+  if (cat) {
+    const lower = String(cat).trim().toLowerCase();
+    if (lower === 'elite') normalizedKey = 'Elite';
+    else if (lower === 'specialist') normalizedKey = 'Specialist';
+    else if (lower === 'challenger') normalizedKey = 'Challenger';
+    else if (lower === 'solver') normalizedKey = 'Solver';
+    else normalizedKey = 'Starter';
+  }
 
   const config = {
     Starter: {
@@ -53,11 +70,11 @@ export function CategoryBadge({ category, score, style = {} }) {
     }
   };
 
-  const current = config[cat] || config.Starter;
+  const current = config[normalizedKey] || config.Starter;
 
   return (
     <span
-      className={`category-badge category-${cat.toLowerCase()}`}
+      className={`category-badge category-${normalizedKey.toLowerCase()}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

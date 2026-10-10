@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export function CustomSelect({ value, onChange, options, placeholder = 'Select...' }) {
+export function CustomSelect({ value, onChange, options = [], placeholder = 'Select...' }) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef(null);
 
@@ -27,10 +27,13 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
     }
   }, [isOpen]);
 
-  const selectedLabel = options.find(o => o.value === value)?.label || placeholder;
+  const safeOptions = Array.isArray(options) ? options : [];
+  const selectedLabel = safeOptions.find(o => String(o.value) === String(value))?.label || placeholder;
 
   const handleSelect = (val) => {
-    onChange({ target: { value: val } }); // mimic native event shape
+    if (onChange) {
+      onChange({ target: { value: val } }); // mimic native event shape
+    }
     setIsOpen(false);
   };
 
@@ -49,17 +52,20 @@ export function CustomSelect({ value, onChange, options, placeholder = 'Select..
 
       {isOpen && (
         <ul className="custom-select-menu" role="listbox">
-          {options.map((opt) => (
-            <li
-              key={opt.value}
-              role="option"
-              aria-selected={opt.value === value}
-              className={`custom-select-option ${opt.value === value ? 'selected' : ''}`}
-              onClick={() => handleSelect(opt.value)}
-            >
-              {opt.label}
-            </li>
-          ))}
+          {safeOptions.map((opt) => {
+            const isSelected = String(opt.value) === String(value);
+            return (
+              <li
+                key={opt.value}
+                role="option"
+                aria-selected={isSelected}
+                className={`custom-select-option ${isSelected ? 'selected' : ''}`}
+                onClick={() => handleSelect(opt.value)}
+              >
+                {opt.label}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

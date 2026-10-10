@@ -1,6 +1,7 @@
 import React from 'react';
 import { Users, Code, Flame, Award, Trophy, Zap, Target } from 'lucide-react';
 import { useCountUp } from '../utils/useCountUp';
+import { calculateCompositeScore } from '../data/sampleData';
 
 function AnimatedValue({ value, suffix = '' }) {
   const animated = useCountUp(value, 900);
@@ -21,8 +22,10 @@ export function AnalyticsView({ students, activeTab = 'college', dashboardStats 
   const totalPointsSum = students.reduce((sum, s) => sum + (s.pgp?.points ?? s.pgpPoints ?? 0), 0);
   const avgPoints = dashboardStats?.avgPgpPoints ? Math.round(dashboardStats.avgPgpPoints) : (totalStudents > 0 ? Math.round(totalPointsSum / totalStudents) : 0);
 
-  // V2 Metrics
-  const highestOverallScore = dashboardStats?.highestOverallScore != null ? Number(dashboardStats.highestOverallScore) : Math.max(...students.map(s => s.overallScore ?? s.compositeScore ?? 0), 0);
+  // V2 Metrics - calculateCompositeScore fallback ensures score is always accurately available
+  const highestOverallScore = dashboardStats?.highestOverallScore != null
+    ? Number(dashboardStats.highestOverallScore)
+    : Math.max(...students.map(s => s.overallScore != null ? Number(s.overallScore) : (s.compositeScore ?? calculateCompositeScore(s))), 0);
   const activePlatforms = dashboardStats?.activePlatformsCount ?? (dashboardStats?.activePlatforms?.length ?? 5);
 
   // Weekly Assessment Stats

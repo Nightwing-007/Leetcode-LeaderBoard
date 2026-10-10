@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Code, Flame, Star, Trophy, Award, Zap, Target, Globe, Cpu, Users, BarChart3, ShieldCheck, Edit2, Trash2 } from 'lucide-react';
 import { fetchStudentDetail } from '../api/leaderboardApi';
 import { CategoryBadge } from './CategoryBadge';
+import { calculateCompositeScore } from '../data/sampleData';
 
 export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDelete }) {
   const [studentData, setStudentData] = useState(student);
@@ -43,7 +44,7 @@ export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDele
 
   // 1. Rankings & Institutional Standing
   const rankings = current.rankings || {};
-  const collegeRank = rankings.collegeRank ?? current.collegeRank ?? current.rank ?? 1;
+  const collegeRank = rankings.collegeRank ?? current.collegeRank ?? current.rank ?? null;
   const yearRank = rankings.yearRank ?? current.yearRank;
   const deptRank = rankings.departmentRank ?? current.departmentRank;
   const classRank = rankings.classRank ?? current.classRank;
@@ -52,7 +53,7 @@ export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDele
   const percentile = rawPercentile != null
     ? Number(rawPercentile).toFixed(1)
     : (classRank && classSize ? Math.max(0, Math.min(100, Math.round(((classSize - classRank) / classSize) * 100))).toFixed(1) : null);
-  const overallScore = rankings.overallScore ?? current.overallScore ?? current.compositeScore ?? 0;
+  const overallScore = rankings.overallScore ?? current.overallScore ?? (current.compositeScore ?? calculateCompositeScore(current));
 
   // 2. Multi-Platform Performance Isolation list
   let platformList = Array.isArray(current.platformPerformance) && current.platformPerformance.length > 0
@@ -64,7 +65,7 @@ export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDele
     const lc = current.leetcode || {};
     const pgp = current.pgp || {};
 
-    if (lc.leetcodeId || (lc.solvedTotal ?? current.lcSolvedTotal ?? 0) > 0) {
+    if (lc.leetcodeId || current.leetcodeId || (lc.solvedTotal ?? current.lcSolvedTotal ?? 0) > 0 || (lc.contestRating ?? current.lcContestRating ?? 0) > 0) {
       platformList.push({
         platformName: 'LeetCode',
         platformUsername: lc.leetcodeId || current.leetcodeId || 'N/A',
@@ -99,7 +100,7 @@ export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDele
   const weeklyRank = current.weeklyAssessment?.rank ?? current.weeklyRank ?? 0;
 
   if (percentile && Number(percentile) >= 95) badges.push({ title: 'Top 5% Class Elite', color: '#10B981' });
-  if (collegeRank && collegeRank <= 5) badges.push({ title: `College Top 5 (#${collegeRank})`, color: '#FFB800' });
+  if (collegeRank != null && collegeRank <= 5) badges.push({ title: `College Top 5 (#${collegeRank})`, color: '#FFB800' });
   if (weeklyScore >= 100) badges.push({ title: 'Centum Weekly Achiever (100+)', color: '#FFB800' });
   if (weeklyRank > 0 && weeklyRank <= 10) badges.push({ title: `Weekly Top 10 (#${weeklyRank})`, color: '#3B82F6' });
   if (platformList.length >= 3) badges.push({ title: 'Multi-Platform Master', color: '#8B5CF6' });
@@ -186,7 +187,7 @@ export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDele
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>CT Score:</span>
                 <span style={{ background: 'var(--sece-navy-900)', color: '#FFC72C', fontWeight: 900, padding: '3px 10px', borderRadius: '8px', fontSize: '0.9rem' }}>
-                  ⭐ {Number(overallScore).toLocaleString()} pts
+                  ⭐ {Math.round(Number(overallScore)).toLocaleString()} pts
                 </span>
                 <CategoryBadge category={current.category} score={overallScore} />
               </div>
@@ -196,8 +197,8 @@ export function StudentModal({ student, onClose, isAdmin = false, onEdit, onDele
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.65rem', textAlign: 'center' }}>
               {/* College Rank */}
               <div style={{ background: 'var(--bg-card)', padding: '0.75rem 0.5rem', borderRadius: '10px', border: '1px solid var(--border-color)', boxShadow: '0 2px 6px rgba(0,0,0,0.03)' }}>
-                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: collegeRank <= 3 ? '#D99B00' : 'var(--sece-navy-800)' }}>
-                  #{collegeRank}
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: collegeRank && collegeRank <= 3 ? '#D99B00' : 'var(--sece-navy-800)' }}>
+                  {collegeRank ? `#${collegeRank}` : '—'}
                 </div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, marginTop: '2px' }}>College Rank</div>
               </div>

@@ -10,16 +10,20 @@ export function useCountUp(end, duration = 800) {
   const frameRef = useRef(null);
 
   useEffect(() => {
-    if (typeof end !== 'number' || isNaN(end)) {
+    const numEnd = Number(end);
+    if (isNaN(numEnd)) {
       setValue(0);
       return;
     }
 
     const startVal = prevEnd.current;
     const startTime = performance.now();
-    const diff = end - startVal;
+    const diff = numEnd - startVal;
 
-    if (diff === 0) return;
+    if (diff === 0) {
+      setValue(numEnd);
+      return;
+    }
 
     const animate = (currentTime) => {
       const elapsed = currentTime - startTime;
@@ -32,7 +36,7 @@ export function useCountUp(end, duration = 800) {
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate);
       } else {
-        prevEnd.current = end;
+        prevEnd.current = numEnd;
       }
     };
 
