@@ -6,7 +6,6 @@ import { LeaderboardTable } from './components/LeaderboardTable';
 import { DepartmentView } from './components/DepartmentView';
 import { TvModeSlideshow } from './components/TvModeSlideshow';
 import { ExcelUploaderModal } from './components/ExcelUploaderModal';
-import { StudentModal } from './components/StudentModal';
 import { DataEditorModal } from './components/DataEditorModal';
 import { LoginModal } from './components/LoginModal';
 import { INITIAL_STUDENTS_DATA, calculateCompositeScore } from './data/sampleData';
@@ -290,6 +289,7 @@ export default function App() {
           setSelectedGender={setSelectedGender}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          selectedStudent={selectedStudent}
           onSelectStudent={(st) => setSelectedStudent(st)}
           onEditStudent={(st) => { setStudentToEdit(st); setIsEditorOpen(true); }}
           onDeleteStudent={handleDeleteStudent}
@@ -323,15 +323,6 @@ export default function App() {
         onClose={() => setIsUploadOpen(false)}
         onUploadSuccess={handleUploadSuccess}
         currentStudents={students}
-      />
-
-      {/* Student Detailed 360° Profile Modal */}
-      <StudentModal
-        student={selectedStudent}
-        onClose={() => setSelectedStudent(null)}
-        isAdmin={isAdmin}
-        onEdit={(st) => { setStudentToEdit(st); setIsEditorOpen(true); }}
-        onDelete={handleDeleteStudent}
       />
 
       {/* Admin Login Modal */}

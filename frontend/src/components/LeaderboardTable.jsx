@@ -17,7 +17,9 @@ import {
   Users,
   GraduationCap,
   Building,
-  Layers
+  Layers,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import {
   COLLEGE_DEPARTMENTS,
@@ -29,6 +31,7 @@ import {
 } from '../data/sampleData';
 import { CustomSelect } from './CustomSelect';
 import { CategoryBadge } from './CategoryBadge';
+import { StudentDetailCard } from './StudentDetailCard';
 
 export function LeaderboardTable({
   students = [],
@@ -46,6 +49,7 @@ export function LeaderboardTable({
   setSelectedGender,
   searchQuery = '',
   setSearchQuery,
+  selectedStudent = null,
   onSelectStudent,
   onEditStudent,
   onDeleteStudent,
@@ -58,6 +62,16 @@ export function LeaderboardTable({
   const [sortBy, setSortBy] = useState('rank');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50); // 25 | 50 | 100 | 250 | 'All'
+  const [expandedStudentRoll, setExpandedStudentRoll] = useState(null);
+
+  const handleToggleExpand = (st) => {
+    const roll = st.rollNo || st.registerNumber || st.id;
+    const isCurrentlyExpanded = expandedStudentRoll === roll;
+    setExpandedStudentRoll(isCurrentlyExpanded ? null : roll);
+    if (onSelectStudent) {
+      onSelectStudent(isCurrentlyExpanded ? null : st);
+    }
+  };
 
   // Reset pagination when tab or filters change
   useEffect(() => {
@@ -196,6 +210,33 @@ export function LeaderboardTable({
 
   const startIndex = totalCount === 0 ? 0 : (pageSize === 'All' ? 1 : (activePage - 1) * Number(pageSize) + 1);
   const endIndex = pageSize === 'All' ? totalCount : Math.min(activePage * Number(pageSize), totalCount);
+
+  // When selectedStudent changes from outside (e.g. Podium or DepartmentView), auto-expand and scroll to them
+  useEffect(() => {
+    if (selectedStudent) {
+      const roll = selectedStudent.rollNo || selectedStudent.registerNumber || selectedStudent.id;
+      if (roll) {
+        // If student is in filtered/sorted list and on another page, navigate to that page
+        const studentIndex = sortedStudents.findIndex(
+          s => (s.rollNo || s.registerNumber || s.id) === roll
+        );
+        if (studentIndex !== -1 && pageSize !== 'All') {
+          const targetPage = Math.floor(studentIndex / Number(pageSize)) + 1;
+          if (currentPage !== targetPage) {
+            setCurrentPage(targetPage);
+          }
+        }
+
+        setExpandedStudentRoll(roll);
+        setTimeout(() => {
+          const el = document.getElementById(`student-row-${roll}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 150);
+      }
+    }
+  }, [selectedStudent, sortedStudents, pageSize, currentPage]);
 
   const handlePageNavigation = (newPage) => {
     if (newPage < 1 || newPage > totalPages) return;
@@ -582,211 +623,274 @@ export function LeaderboardTable({
                   ? Number(st.percentile).toFixed(1)
                   : (rankNum && classSize ? Math.max(0, Math.min(100, Math.round(((classSize - rankNum) / classSize) * 100))).toFixed(1) : '95.0');
 
+                const rollId = st.rollNo || st.registerNumber || st.id;
+                const isExpanded = expandedStudentRoll === rollId;
+
                 return (
-                  <tr key={st.rollNo || st.id || index} onClick={() => onSelectStudent && onSelectStudent(st)} style={{ cursor: 'pointer' }}>
-                    {/* Rank */}
-                    <td style={{ textAlign: 'center' }}>
-                      <span className={`rank-pill rank-${rankNum <= 3 ? rankNum : 'other'}`}>
-                        {rankNum === 1 ? '🥇 #1' : rankNum === 2 ? '🥈 #2' : rankNum === 3 ? '🥉 #3' : `#${rankNum}`}
-                      </span>
-                    </td>
+                  <React.Fragment key={rollId || index}>
+                    <tr
+                      id={`student-row-${rollId}`}
+                      className={`student-table-row ${isExpanded ? 'row-expanded' : ''}`}
+                      onClick={() => handleToggleExpand(st)}
+                      style={{
+                        cursor: 'pointer',
+                        background: isExpanded ? 'rgba(255, 184, 0, 0.08)' : undefined,
+                        borderLeft: isExpanded ? '4px solid var(--sece-gold-500)' : '4px solid transparent',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {/* Rank */}
+                      <td style={{ textAlign: 'center' }}>
+                        <span className={`rank-pill rank-${rankNum <= 3 ? rankNum : 'other'}`}>
+                          {rankNum === 1 ? '🥇 #1' : rankNum === 2 ? '🥈 #2' : rankNum === 3 ? '🥉 #3' : `#${rankNum}`}
+                        </span>
+                      </td>
 
-                    {/* Student Info */}
-                    <td>
-                      <div className="coder-info">
-                        <div className="avatar-circle">
-                          {st.name ? st.name.charAt(0).toUpperCase() : 'S'}
-                        </div>
-                        <div>
-                          <div className="coder-name">{st.name}</div>
-                          <div className="coder-meta">
-                            <span>{st.rollNo || st.registerNumber}</span>
-                            {lcId && (
-                              <span style={{ color: 'var(--sece-navy-600)', fontWeight: 600 }}>
-                                • @{lcId}
-                              </span>
+                      {/* Student Info */}
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                          <div className="coder-info">
+                            <div className="avatar-circle">
+                              {st.name ? st.name.charAt(0).toUpperCase() : 'S'}
+                            </div>
+                            <div>
+                              <div className="coder-name">{st.name}</div>
+                              <div className="coder-meta">
+                                <span>{st.rollNo || st.registerNumber}</span>
+                                {lcId && (
+                                  <span style={{ color: 'var(--sece-navy-600)', fontWeight: 600 }}>
+                                    • @{lcId}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className="row-expand-arrow"
+                            title={isExpanded ? 'Collapse profile' : 'Expand full 360° profile right here'}
+                            style={{
+                              color: isExpanded ? 'var(--sece-gold-600)' : 'var(--text-light)',
+                              fontSize: '0.75rem',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              padding: '2px 8px',
+                              borderRadius: '6px',
+                              background: isExpanded ? 'rgba(255, 184, 0, 0.15)' : 'transparent',
+                              flexShrink: 0
+                            }}
+                          >
+                            {isExpanded ? (
+                              <>
+                                <span>Close</span>
+                                <ChevronUp size={14} />
+                              </>
+                            ) : (
+                              <>
+                                <span>View</span>
+                                <ChevronDown size={14} />
+                              </>
                             )}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-
-                    {/* Dept / Cohort */}
-                    <td>
-                      <span className="badge-dept">{st.department}</span>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '2px' }}>
-                        {st.academicYear ? `Yr ${st.academicYear}` : ''} {st.section ? `• Sec ${st.section}` : ''} ({st.batch || '2024-2028'})
-                      </div>
-                    </td>
-
-                    {/* Tab Specific: Class Toppers View */}
-                    {activeTab === 'class' && (
-                      <>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem', fontWeight: 900 }}>
-                              ⭐ {Math.round(compScore).toLocaleString()}
-                            </span>
-                            <CategoryBadge category={st.category} score={compScore} />
-                          </div>
-                        </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span style={{ fontWeight: 700, color: 'var(--text-main)', background: 'var(--bg-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
-                            {classSize}
                           </span>
-                        </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span style={{
-                            background: Number(percentileVal) >= 90 ? 'rgba(16, 185, 129, 0.15)' : 'var(--sece-navy-100)',
-                            color: Number(percentileVal) >= 90 ? '#059669' : 'var(--sece-navy-900)',
-                            fontWeight: 900,
-                            padding: '3px 9px',
-                            borderRadius: '12px',
-                            fontSize: '0.85rem'
-                          }}>
-                            {percentileVal}%
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                            {lcSolved > 0 ? `${lcSolved} LC` : ''} {pgpPoints > 0 ? `• ${pgpPoints.toLocaleString()} PGP` : ''}
-                          </span>
-                        </td>
-                      </>
-                    )}
-
-                    {/* Tab Specific: Other Topper Views (College, Year, Dept, Dept+Year) */}
-                    {['college', 'year', 'department', 'dept_year'].includes(activeTab) && (
-                      <>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1.05rem', fontWeight: 900 }}>
-                              ⭐ {Math.round(compScore).toLocaleString()}
-                            </span>
-                            <CategoryBadge category={st.category} score={compScore} />
-                          </div>
-                        </td>
-                        <td>
-                          {lcGlobalRank > 0 && lcGlobalRank < 900000 ? `#${lcGlobalRank.toLocaleString()}` : (lcRating > 1500 ? `Rating ${Math.round(lcRating)}` : '—')}
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 700, color: 'var(--sece-navy-800)' }}>
-                            {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
-                            {lcSolved} LC / {pgpSolved} SkillRack
-                          </span>
-                        </td>
-                      </>
-                    )}
-
-                    {/* Tab Specific: Weekly */}
-                    {activeTab === 'weekly' && (
-                      <>
-                        <td>
-                          <span className="stat-highlight" style={{ color: weeklyScore >= 100 ? '#D99B00' : 'var(--sece-navy-700)', fontSize: '1rem', fontWeight: 900 }}>
-                            {weeklyScore} pts
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}>
-                            {weeklyCode} / 4 Solved
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 700, color: '#2563EB', fontSize: '0.85rem' }}>
-                            {weeklyMcq} / 100
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                            {weeklyRank > 0 ? `#${weeklyRank}` : 'N/A'}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--sece-gold-600)', fontWeight: 700 }}>
-                            {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
-                          </span>
-                        </td>
-                      </>
-                    )}
-
-                    {/* Tab Specific: LeetCode */}
-                    {activeTab === 'leetcode' && (
-                      <>
-                        <td>
-                          <span className="stat-highlight">
-                            {lcGlobalRank > 0 && lcGlobalRank < 900000 ? `#${lcGlobalRank.toLocaleString()}` : 'N/A'}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 800, color: 'var(--sece-navy-700)' }}>
-                            {Math.round(Number(lcRating))}
-                          </span>
-                        </td>
-                        <td>{lcContests}</td>
-                        <td>
-                          <span className="stat-highlight" style={{ color: '#10B981' }}>
-                            {lcSolved}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ fontSize: '0.8rem', display: 'flex', gap: '6px' }}>
-                            <span style={{ color: '#10B981' }}>{lcEasy}E</span>
-                            <span style={{ color: '#F59E0B' }}>{lcMed}M</span>
-                            <span style={{ color: '#EF4444' }}>{lcHard}H</span>
-                          </div>
-                        </td>
-                      </>
-                    )}
-
-                    {/* Tab Specific: SkillRack */}
-                    {activeTab === 'pgp' && (
-                      <>
-                        <td>
-                          <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem' }}>
-                            {pgpPoints.toLocaleString()}
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{ fontWeight: 700 }}>{pgpSolved}</span>
-                        </td>
-                        <td>{pgpTests}</td>
-                        <td>
-                          <span style={{ fontSize: '0.85rem' }}>{pgpDc} / {pgpDt}</span>
-                        </td>
-                        <td>
-                          <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                            {pgpRank > 0 ? `#${pgpRank.toLocaleString()}` : 'N/A'}
-                          </span>
-                        </td>
-                      </>
-                    )}
-
-                    {/* Actions - Only visible to authenticated Admin */}
-                    {isAdmin && (
-                      <td onClick={(e) => e.stopPropagation()}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                          <button
-                            className="btn-icon"
-                            title="Edit coder"
-                            onClick={() => onEditStudent && onEditStudent(st)}
-                          >
-                            <Edit2 size={15} />
-                          </button>
-                          <button
-                            className="btn-icon delete"
-                            title="Delete coder"
-                            onClick={() => onDeleteStudent && onDeleteStudent(st.rollNo || st.id)}
-                          >
-                            <Trash2 size={15} />
-                          </button>
                         </div>
                       </td>
+
+                      {/* Dept / Cohort */}
+                      <td>
+                        <span className="badge-dept">{st.department}</span>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-light)', marginTop: '2px' }}>
+                          {st.academicYear ? `Yr ${st.academicYear}` : ''} {st.section ? `• Sec ${st.section}` : ''} ({st.batch || '2024-2028'})
+                        </div>
+                      </td>
+
+                      {/* Tab Specific: Class Toppers View */}
+                      {activeTab === 'class' && (
+                        <>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem', fontWeight: 900 }}>
+                                ⭐ {Math.round(compScore).toLocaleString()}
+                              </span>
+                              <CategoryBadge category={st.category} score={compScore} />
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{ fontWeight: 700, color: 'var(--text-main)', background: 'var(--bg-primary)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.85rem' }}>
+                              {classSize}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span style={{
+                              background: Number(percentileVal) >= 90 ? 'rgba(16, 185, 129, 0.15)' : 'var(--sece-navy-100)',
+                              color: Number(percentileVal) >= 90 ? '#059669' : 'var(--sece-navy-900)',
+                              fontWeight: 900,
+                              padding: '3px 9px',
+                              borderRadius: '12px',
+                              fontSize: '0.85rem'
+                            }}>
+                              {percentileVal}%
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              {lcSolved > 0 ? `${lcSolved} LC` : ''} {pgpPoints > 0 ? `• ${pgpPoints.toLocaleString()} PGP` : ''}
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Tab Specific: Other Topper Views (College, Year, Dept, Dept+Year) */}
+                      {['college', 'year', 'department', 'dept_year'].includes(activeTab) && (
+                        <>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1.05rem', fontWeight: 900 }}>
+                                ⭐ {Math.round(compScore).toLocaleString()}
+                              </span>
+                              <CategoryBadge category={st.category} score={compScore} />
+                            </div>
+                          </td>
+                          <td>
+                            {lcGlobalRank > 0 && lcGlobalRank < 900000 ? `#${lcGlobalRank.toLocaleString()}` : (lcRating > 1500 ? `Rating ${Math.round(lcRating)}` : '—')}
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 700, color: 'var(--sece-navy-800)' }}>
+                              {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                              {lcSolved} LC / {pgpSolved} SkillRack
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Tab Specific: Weekly */}
+                      {activeTab === 'weekly' && (
+                        <>
+                          <td>
+                            <span className="stat-highlight" style={{ color: weeklyScore >= 100 ? '#D99B00' : 'var(--sece-navy-700)', fontSize: '1rem', fontWeight: 900 }}>
+                              {weeklyScore} pts
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 800, color: '#10B981', background: 'rgba(16,185,129,0.1)', padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.85rem' }}>
+                              {weeklyCode} / 4 Solved
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 700, color: '#2563EB', fontSize: '0.85rem' }}>
+                              {weeklyMcq} / 100
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 700, color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                              {weeklyRank > 0 ? `#${weeklyRank}` : 'N/A'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--sece-gold-600)', fontWeight: 700 }}>
+                              {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Tab Specific: LeetCode */}
+                      {activeTab === 'leetcode' && (
+                        <>
+                          <td>
+                            <span className="stat-highlight">
+                              {lcGlobalRank > 0 && lcGlobalRank < 900000 ? `#${lcGlobalRank.toLocaleString()}` : 'N/A'}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 800, color: 'var(--sece-navy-700)' }}>
+                              {Math.round(Number(lcRating))}
+                            </span>
+                          </td>
+                          <td>{lcContests}</td>
+                          <td>
+                            <span className="stat-highlight" style={{ color: '#10B981' }}>
+                              {lcSolved}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ fontSize: '0.8rem', display: 'flex', gap: '6px' }}>
+                              <span style={{ color: '#10B981' }}>{lcEasy}E</span>
+                              <span style={{ color: '#F59E0B' }}>{lcMed}M</span>
+                              <span style={{ color: '#EF4444' }}>{lcHard}H</span>
+                            </div>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Tab Specific: SkillRack */}
+                      {activeTab === 'pgp' && (
+                        <>
+                          <td>
+                            <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem' }}>
+                              {pgpPoints.toLocaleString()}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontWeight: 700 }}>{pgpSolved}</span>
+                          </td>
+                          <td>{pgpTests}</td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem' }}>{pgpDc} / {pgpDt}</span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                              {pgpRank > 0 ? `#${pgpRank.toLocaleString()}` : 'N/A'}
+                            </span>
+                          </td>
+                        </>
+                      )}
+
+                      {/* Actions - Only visible to authenticated Admin */}
+                      {isAdmin && (
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
+                            <button
+                              className="btn-icon"
+                              title="Edit coder"
+                              onClick={() => onEditStudent && onEditStudent(st)}
+                            >
+                              <Edit2 size={15} />
+                            </button>
+                            <button
+                              className="btn-icon delete"
+                              title="Delete coder"
+                              onClick={() => onDeleteStudent && onDeleteStudent(st.rollNo || st.id)}
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+
+                    {/* Inline Expanded Student Profile Card - Opens right here! */}
+                    {isExpanded && (
+                      <tr className="expanded-detail-row">
+                        <td colSpan={100} style={{ padding: '0.5rem 1rem 1rem 1rem', background: 'var(--bg-primary)' }}>
+                          <StudentDetailCard
+                            student={st}
+                            onClose={() => {
+                              setExpandedStudentRoll(null);
+                              if (onSelectStudent) onSelectStudent(null);
+                            }}
+                            isAdmin={isAdmin}
+                            onEdit={(student) => onEditStudent && onEditStudent(student)}
+                            onDelete={(roll) => onDeleteStudent && onDeleteStudent(roll)}
+                          />
+                        </td>
+                      </tr>
                     )}
-                  </tr>
+                  </React.Fragment>
                 );
               })
             )}
