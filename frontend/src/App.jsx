@@ -289,8 +289,8 @@ function Dashboard({
       <main className="main-wrapper">
         {/* KPI Institutional Metrics & Department-Wise Category Breakdown */}
         <AnalyticsView
-          data={filteredStudents}
-          students={filteredStudents}
+          data={cohortStudents}
+          students={cohortStudents}
           activeTab={activeTab}
           dashboardStats={dashboardStats}
         />
@@ -345,7 +345,7 @@ function Dashboard({
       {/* Smart TV Kiosk Broadcast Slideshow Mode */}
       {tvMode && (
         <TvModeSlideshow
-          students={students}
+          students={fullStudentsList}
           onCloseTvMode={() => setTvMode(false)}
           soundEnabled={soundEnabled}
         />
