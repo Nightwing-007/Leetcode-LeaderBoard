@@ -231,7 +231,7 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
         className="dept-dual-charts-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
           gap: '1.5rem',
           alignItems: 'stretch'
         }}
@@ -297,7 +297,7 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
           </div>
 
           {/* Top Elite Department Standout Callout Banner */}
-          {topEliteDept && (
+          {topEliteDept && topEliteDept.elites > 0 && (
             <div
               className="top-elite-banner"
               style={{
@@ -328,10 +328,10 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ background: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#D97706', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
                   💎 {topEliteDept.elites} Elites
                 </span>
-                <span style={{ background: '#F5F3FF', color: '#6D28D9', border: '1px solid #DDD6FE', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                <span style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8B5CF6', border: '1px solid rgba(139, 92, 246, 0.35)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
                   ⚡ {topEliteDept.specialists} Specialists
                 </span>
               </div>

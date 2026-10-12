@@ -282,7 +282,7 @@ export function LeaderboardTable({
         >
           {/* Tab 1: College Toppers */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'college' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',
@@ -302,7 +302,7 @@ export function LeaderboardTable({
 
           {/* Tab 2: Year-Wise Toppers */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'year' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',
@@ -322,7 +322,7 @@ export function LeaderboardTable({
 
           {/* Tab 3: Department-Wise */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'department' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',
@@ -342,7 +342,7 @@ export function LeaderboardTable({
 
           {/* Tab 4: Dept + Year-Wise */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'dept_year' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',
@@ -362,7 +362,7 @@ export function LeaderboardTable({
 
           {/* Tab 5: Class / Section Toppers */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'class' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',
@@ -382,7 +382,7 @@ export function LeaderboardTable({
 
           {/* Platform Tab: SkillRack / PGP */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'pgp' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem', 
               padding: '0.45rem 0.8rem',
@@ -401,7 +401,7 @@ export function LeaderboardTable({
 
           {/* Platform Tab: LeetCode Global */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'leetcode' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',
@@ -420,7 +420,7 @@ export function LeaderboardTable({
 
           {/* Platform Tab: Weekly Assessment */}
           <button
-            className="btn"
+            className={`btn tab-pill ${activeTab === 'weekly' ? 'active' : ''}`}
             style={{
               fontSize: '0.825rem',
               padding: '0.45rem 0.8rem',

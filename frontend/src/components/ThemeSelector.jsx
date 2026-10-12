@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Palette, Check, ChevronDown, Moon, Sun, Sparkles } from 'lucide-react';
+import { Palette, Check, ChevronDown, Moon, Orbit, Sparkles } from 'lucide-react';
 
 export const THEMES = [
   {
@@ -10,11 +10,11 @@ export const THEMES = [
     swatches: ['#003366', '#FFB800']
   },
   {
-    id: 'minimal',
-    name: 'Google Minimal',
-    icon: Sun,
-    color: '#1A73E8',
-    swatches: ['#1A73E8', '#FFFFFF']
+    id: 'antigravity',
+    name: 'Google Antigravity',
+    icon: Orbit,
+    color: '#2563EB',
+    swatches: ['#FFFFFF', '#2563EB', '#38BDF8']
   },
   {
     id: 'dark',
@@ -53,7 +53,7 @@ export function ThemeSelector({ currentTheme = 'classic', onSelectTheme }) {
     }
   }, [isOpen]);
 
-  const activeThemeObj = THEMES.find((t) => t.id === currentTheme) || THEMES[0];
+  const activeThemeObj = THEMES.find((t) => t.id === currentTheme || (t.id === 'antigravity' && currentTheme === 'minimal')) || THEMES[0];
   const ActiveIcon = activeThemeObj.icon;
 
   const handleChoose = (themeId) => {
@@ -133,7 +133,7 @@ export function ThemeSelector({ currentTheme = 'classic', onSelectTheme }) {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {THEMES.map((item) => {
-              const isSelected = item.id === currentTheme;
+              const isSelected = item.id === currentTheme || (item.id === 'antigravity' && currentTheme === 'minimal');
               const ItemIcon = item.icon;
 
               return (
@@ -151,13 +151,13 @@ export function ThemeSelector({ currentTheme = 'classic', onSelectTheme }) {
                     padding: '8px 10px',
                     borderRadius: '8px',
                     border: 'none',
-                    background: isSelected ? 'var(--sece-navy-100)' : 'transparent',
-                    color: isSelected ? 'var(--sece-navy-700)' : 'var(--text-main)',
+                    background: isSelected ? 'var(--theme-select-active-bg, rgba(99, 102, 241, 0.15))' : 'transparent',
+                    color: isSelected ? 'var(--theme-select-active-color, #818CF8)' : 'var(--text-main)',
                     fontWeight: isSelected ? 700 : 500,
                     fontSize: '0.825rem',
                     cursor: 'pointer',
                     textAlign: 'left',
-                    transition: 'background 0.15s ease'
+                    transition: 'all 0.15s ease'
                   }}
                   onMouseEnter={(e) => {
                     if (!isSelected) e.currentTarget.style.background = 'var(--bg-card-hover)';
@@ -191,7 +191,7 @@ export function ThemeSelector({ currentTheme = 'classic', onSelectTheme }) {
                   </div>
 
                   {isSelected && (
-                    <Check size={14} strokeWidth={2.5} color="var(--sece-gold-500)" />
+                    <Check size={14} strokeWidth={2.5} color={item.color} />
                   )}
                 </button>
               );

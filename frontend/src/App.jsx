@@ -36,9 +36,8 @@ export default function App() {
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('sece_theme');
     if (saved === 'dark') return 'dark';
-    if (saved === 'minimal') return 'minimal';
-    if (saved === 'classic') return 'classic';
-    if (saved === 'light') return 'classic';
+    if (saved === 'antigravity' || saved === 'minimal') return 'antigravity';
+    if (saved === 'classic' || saved === 'light') return 'classic';
     return 'classic';
   });
 
@@ -72,9 +71,9 @@ export default function App() {
     if (theme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('sece_theme', 'dark');
-    } else if (theme === 'minimal') {
-      document.documentElement.setAttribute('data-theme', 'minimal');
-      localStorage.setItem('sece_theme', 'minimal');
+    } else if (theme === 'antigravity' || theme === 'minimal') {
+      document.documentElement.setAttribute('data-theme', 'antigravity');
+      localStorage.setItem('sece_theme', 'antigravity');
     } else {
       document.documentElement.setAttribute('data-theme', 'classic');
       localStorage.setItem('sece_theme', 'classic');
