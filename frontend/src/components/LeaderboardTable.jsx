@@ -264,7 +264,22 @@ export function LeaderboardTable({
         </div>
 
         {/* 5 Major Ranking Tabs & Platform Tabs */}
-        <div style={{ display: 'flex', background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '5px', gap: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', flexWrap: 'wrap' }}>
+        <div
+          className="leaderboard-tabs-bar"
+          style={{
+            display: 'flex',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '14px',
+            padding: '5px',
+            gap: '4px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+            flexWrap: 'nowrap',
+            overflowX: 'auto',
+            maxWidth: '100%',
+            whiteSpace: 'nowrap'
+          }}
+        >
           {/* Tab 1: College Toppers */}
           <button
             className="btn"
@@ -276,7 +291,8 @@ export function LeaderboardTable({
               background: activeTab === 'college' ? 'linear-gradient(135deg, #FFB800, #FFC72C)' : 'transparent',
               color: activeTab === 'college' ? '#002855' : 'var(--text-main)',
               fontWeight: activeTab === 'college' ? 800 : 600,
-              boxShadow: activeTab === 'college' ? '0 2px 8px rgba(255, 184, 0, 0.4)' : 'none'
+              boxShadow: activeTab === 'college' ? '0 2px 8px rgba(255, 184, 0, 0.4)' : 'none',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('college')}
           >
@@ -295,7 +311,8 @@ export function LeaderboardTable({
               background: activeTab === 'year' ? 'var(--sece-navy-900)' : 'transparent',
               color: activeTab === 'year' ? '#FFC72C' : 'var(--text-main)',
               fontWeight: activeTab === 'year' ? 800 : 600,
-              boxShadow: activeTab === 'year' ? '0 2px 8px rgba(0, 40, 85, 0.35)' : 'none'
+              boxShadow: activeTab === 'year' ? '0 2px 8px rgba(0, 40, 85, 0.35)' : 'none',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('year')}
           >
@@ -314,7 +331,8 @@ export function LeaderboardTable({
               background: activeTab === 'department' ? 'var(--sece-navy-800)' : 'transparent',
               color: activeTab === 'department' ? '#FFF' : 'var(--text-main)',
               fontWeight: activeTab === 'department' ? 800 : 600,
-              boxShadow: activeTab === 'department' ? '0 2px 8px rgba(0, 40, 85, 0.35)' : 'none'
+              boxShadow: activeTab === 'department' ? '0 2px 8px rgba(0, 40, 85, 0.35)' : 'none',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('department')}
           >
@@ -333,7 +351,8 @@ export function LeaderboardTable({
               background: activeTab === 'dept_year' ? 'var(--sece-navy-700)' : 'transparent',
               color: activeTab === 'dept_year' ? '#FFF' : 'var(--text-main)',
               fontWeight: activeTab === 'dept_year' ? 800 : 600,
-              boxShadow: activeTab === 'dept_year' ? '0 2px 8px rgba(0, 51, 102, 0.35)' : 'none'
+              boxShadow: activeTab === 'dept_year' ? '0 2px 8px rgba(0, 51, 102, 0.35)' : 'none',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('dept_year')}
           >
@@ -352,7 +371,8 @@ export function LeaderboardTable({
               background: activeTab === 'class' ? 'linear-gradient(135deg, #059669, #10B981)' : 'transparent',
               color: activeTab === 'class' ? '#FFF' : 'var(--text-main)',
               fontWeight: activeTab === 'class' ? 800 : 600,
-              boxShadow: activeTab === 'class' ? '0 2px 8px rgba(16, 185, 129, 0.4)' : 'none'
+              boxShadow: activeTab === 'class' ? '0 2px 8px rgba(16, 185, 129, 0.4)' : 'none',
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('class')}
           >
@@ -370,7 +390,8 @@ export function LeaderboardTable({
               border: 'none',
               background: activeTab === 'pgp' ? 'var(--sece-gold-500)' : 'transparent',
               color: activeTab === 'pgp' ? '#002855' : 'var(--text-muted)',
-              fontWeight: activeTab === 'pgp' ? 800 : 600
+              fontWeight: activeTab === 'pgp' ? 800 : 600,
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('pgp')}
           >
@@ -388,7 +409,8 @@ export function LeaderboardTable({
               border: 'none',
               background: activeTab === 'leetcode' ? 'var(--sece-navy-900)' : 'transparent',
               color: activeTab === 'leetcode' ? '#FFF' : 'var(--text-muted)',
-              fontWeight: activeTab === 'leetcode' ? 800 : 600
+              fontWeight: activeTab === 'leetcode' ? 800 : 600,
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('leetcode')}
           >
@@ -406,7 +428,8 @@ export function LeaderboardTable({
               border: 'none',
               background: activeTab === 'weekly' ? 'var(--sece-navy-900)' : 'transparent',
               color: activeTab === 'weekly' ? '#FFC72C' : 'var(--text-muted)',
-              fontWeight: activeTab === 'weekly' ? 800 : 600
+              fontWeight: activeTab === 'weekly' ? 800 : 600,
+              whiteSpace: 'nowrap'
             }}
             onClick={() => setActiveTab && setActiveTab('weekly')}
           >

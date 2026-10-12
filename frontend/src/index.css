@@ -79,6 +79,116 @@
   --shadow-glow-navy: 0 0 30px rgba(0, 86, 179, 0.3);
 }
 
+/* Google Minimal / Gmail Professional Theme Override */
+[data-theme="minimal"] {
+  --bg-primary: #F8FAFD;
+  --bg-card: #FFFFFF;
+  --bg-card-hover: #F1F3F4;
+  --bg-glass: rgba(255, 255, 255, 0.95);
+  --border-color: #DADCE0;
+  --border-light: #ECEFF1;
+
+  --text-main: #1F1F1F;
+  --text-muted: #5F6368;
+  --text-light: #80868B;
+
+  --sece-navy-900: #1A73E8;
+  --sece-navy-800: #1557B0;
+  --sece-navy-700: #1A73E8;
+  --sece-navy-600: #1A73E8;
+  --sece-navy-500: #1A73E8;
+  --sece-navy-100: #E8F0FE;
+  --sece-navy-50:  #F8FAFD;
+
+  --sece-gold-600: #E37400;
+  --sece-gold-500: #F9AB00;
+  --sece-gold-400: #FBBC04;
+  --sece-gold-100: #FEF7E0;
+
+  --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.12);
+  --shadow-md: 0 1px 3px rgba(60, 64, 67, 0.15), 0 2px 6px rgba(60, 64, 67, 0.08);
+  --shadow-lg: 0 4px 16px rgba(60, 64, 67, 0.14);
+  --shadow-gold: 0 4px 16px rgba(249, 171, 0, 0.25);
+  --shadow-glow-gold: 0 0 20px rgba(249, 171, 0, 0.2);
+  --shadow-glow-navy: 0 0 20px rgba(26, 115, 232, 0.18);
+}
+
+/* Google Minimal / Gmail Professional Theme Overrides */
+[data-theme="minimal"] .sece-header {
+  background: #FFFFFF !important;
+  color: #1F1F1F !important;
+  border-bottom: 2px solid #E8EAED !important;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08) !important;
+}
+[data-theme="minimal"] .sece-header::after {
+  display: none !important;
+}
+[data-theme="minimal"] .college-title-group h1 {
+  color: #1F1F1F !important;
+}
+[data-theme="minimal"] .college-title-group p {
+  color: #5F6368 !important;
+}
+[data-theme="minimal"] .college-logo-badge {
+  background: #1A73E8 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #1557B0 !important;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.3) !important;
+}
+[data-theme="minimal"] .coders-count-badge {
+  background: #E8F0FE !important;
+  color: #1A73E8 !important;
+  border: 1px solid #D2E3FC !important;
+}
+[data-theme="minimal"] .sece-header .btn-navy {
+  background: #F1F3F4 !important;
+  color: #3C4043 !important;
+  border: 1px solid #DADCE0 !important;
+}
+[data-theme="minimal"] .sece-header .btn-navy:hover {
+  background: #E8EAED !important;
+  color: #202124 !important;
+}
+[data-theme="minimal"] .sece-header .btn-gold {
+  background: #1A73E8 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.3) !important;
+}
+[data-theme="minimal"] .sece-header .btn-gold:hover {
+  background: #1557B0 !important;
+}
+[data-theme="minimal"] .leaderboard-table thead th {
+  background: #F8FAFD !important;
+  color: #444746 !important;
+  border-bottom: 2px solid #DADCE0 !important;
+}
+[data-theme="minimal"] .leaderboard-table tr:hover td {
+  background: #F1F3F4 !important;
+}
+[data-theme="minimal"] .glass-panel {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08) !important;
+}
+[data-theme="minimal"] .stat-card {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.06) !important;
+}
+[data-theme="minimal"] .stat-card.gold-accent {
+  border-top-color: #1A73E8 !important;
+}
+[data-theme="minimal"] .dept-champion-card {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.06) !important;
+}
+[data-theme="minimal"] .dept-champion-card:hover {
+  border-color: #1A73E8 !important;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.12) !important;
+}
+
 /* Reset & Global Base */
 * {
   box-sizing: border-box;
@@ -119,6 +229,13 @@ body::before {
     radial-gradient(ellipse 600px 400px at 15% 20%, rgba(0, 86, 179, 0.12) 0%, transparent 70%),
     radial-gradient(ellipse 500px 500px at 80% 70%, rgba(255, 184, 0, 0.08) 0%, transparent 70%),
     radial-gradient(ellipse 400px 300px at 50% 50%, rgba(0, 51, 102, 0.08) 0%, transparent 60%);
+}
+
+[data-theme="minimal"] body::before {
+  background:
+    radial-gradient(ellipse 650px 450px at 15% 15%, rgba(26, 115, 232, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse 550px 550px at 85% 75%, rgba(251, 188, 4, 0.035) 0%, transparent 70%),
+    radial-gradient(ellipse 400px 300px at 50% 50%, rgba(234, 67, 53, 0.02) 0%, transparent 60%);
 }
 
 @keyframes meshDrift {
@@ -188,7 +305,7 @@ h1, h2, h3, h4, h5, h6 {
   position: sticky;
   top: 0;
   z-index: 100;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Animated shimmer overlay on header */
@@ -2091,4 +2208,406 @@ body.dark .student-inline-card {
   border-color: rgba(255, 184, 0, 0.35);
   box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }
+
+/* ==========================================================================
+   COMPACT THEME SELECTOR DROPDOWN (COLOR OPTIONS ONLY)
+   ========================================================================== */
+.theme-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  user-select: none;
+}
+
+.theme-color-btn {
+  padding: 0.52rem 0.65rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.theme-dropdown-menu-compact {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1050;
+  min-width: 215px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border-color);
+  border-radius: 12px;
+  padding: 5px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  color: var(--text-main);
+  animation: fadeIn 0.15s ease;
+}
+
+/* Ensure Leaderboard Horizontal Tab Nav Bar NEVER wraps or stacks into a dropdown */
+.leaderboard-tabs-bar {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  white-space: nowrap !important;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.leaderboard-tabs-bar::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* ==========================================================================
+   THEME OVERRIDES: GOOGLE MINIMAL / GMAIL PROFESSIONAL
+   ========================================================================== */
+[data-theme="minimal"] .sece-header {
+  background: #FFFFFF !important;
+  color: #1F1F1F !important;
+  border-bottom: 1px solid #DADCE0 !important;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.1) !important;
+}
+
+[data-theme="minimal"] .sece-header::after {
+  display: none !important;
+}
+
+[data-theme="minimal"] .college-logo-badge {
+  background: #1A73E8 !important;
+  color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.28) !important;
+}
+
+[data-theme="minimal"] .college-title-group h1 {
+  color: #1F1F1F !important;
+}
+
+[data-theme="minimal"] .college-title-group p {
+  color: #5F6368 !important;
+}
+
+/* Header Buttons in Minimal */
+[data-theme="minimal"] .btn-gold {
+  background: #1A73E8 !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 1px 3px rgba(26, 115, 232, 0.35) !important;
+}
+
+[data-theme="minimal"] .btn-gold:hover {
+  background: #1557B0 !important;
+  box-shadow: 0 3px 10px rgba(26, 115, 232, 0.45) !important;
+}
+
+[data-theme="minimal"] .btn-navy {
+  background: #FFFFFF !important;
+  color: #3C4043 !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: 0 1px 2px rgba(60, 64, 67, 0.06) !important;
+}
+
+[data-theme="minimal"] .btn-navy:hover {
+  background: #F1F3F4 !important;
+  color: #1A73E8 !important;
+  border-color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .coders-count-badge {
+  background: #E8F0FE !important;
+  color: #1A73E8 !important;
+  border: 1px solid #D2E3FC !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+[data-theme="minimal"] .live-time-chip {
+  background: #F1F3F4 !important;
+  color: #3C4043 !important;
+  border: 1px solid #DADCE0 !important;
+}
+
+/* Compact Theme Selector Button in Minimal */
+[data-theme="minimal"] .theme-color-btn {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  color: #3C4043 !important;
+}
+
+[data-theme="minimal"] .theme-color-btn:hover {
+  background: #F1F3F4 !important;
+  border-color: #1A73E8 !important;
+  color: #1A73E8 !important;
+}
+
+/* Minimal Table Styles */
+[data-theme="minimal"] .leaderboard-table thead th,
+[data-theme="minimal"] .custom-table thead th {
+  background: #F1F3F4 !important;
+  color: #444746 !important;
+  border-bottom: 2px solid #DADCE0 !important;
+}
+
+[data-theme="minimal"] .leaderboard-table tbody td,
+[data-theme="minimal"] .custom-table tbody td {
+  border-bottom: 1px solid #ECEFF1 !important;
+  color: #1F1F1F !important;
+}
+
+[data-theme="minimal"] .leaderboard-table tbody tr:hover,
+[data-theme="minimal"] .custom-table tbody tr:hover {
+  background-color: #F2F6FC !important;
+}
+
+[data-theme="minimal"] .leaderboard-table tbody tr:hover td:first-child,
+[data-theme="minimal"] .custom-table tbody tr:hover td:first-child {
+  border-left-color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .coder-name {
+  color: #1F1F1F !important;
+}
+
+[data-theme="minimal"] .leaderboard-table tbody tr:hover .coder-name {
+  color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .badge-dept {
+  background: #E8F0FE !important;
+  color: #1A73E8 !important;
+  border: 1px solid #D2E3FC !important;
+}
+
+[data-theme="minimal"] .student-table-row.row-expanded {
+  background: #E8F0FE !important;
+  border-left: 4px solid #1A73E8 !important;
+}
+
+[data-theme="minimal"] .student-inline-card {
+  background: #FFFFFF !important;
+  border: 1.5px solid #DADCE0 !important;
+  box-shadow: 0 4px 16px rgba(60, 64, 67, 0.1) !important;
+}
+
+[data-theme="minimal"] .expanded-detail-row td {
+  background: #F8FAFD !important;
+  border-bottom: 2px solid #DADCE0 !important;
+}
+
+/* Minimal Podium Styles */
+[data-theme="minimal"] .podium-card {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: 0 2px 8px rgba(60, 64, 67, 0.08) !important;
+}
+
+[data-theme="minimal"] .podium-card.rank-1 {
+  background: linear-gradient(180deg, #FFFFFF 65%, #FEF7E0 100%) !important;
+  border: 2px solid #F9AB00 !important;
+  box-shadow: 0 6px 24px rgba(249, 171, 0, 0.22) !important;
+}
+
+[data-theme="minimal"] .podium-card.rank-2 {
+  background: linear-gradient(180deg, #FFFFFF 70%, #F1F3F4 100%) !important;
+  border: 1.5px solid #DADCE0 !important;
+}
+
+[data-theme="minimal"] .podium-card.rank-3 {
+  background: linear-gradient(180deg, #FFFFFF 70%, #FCE8E6 100%) !important;
+  border: 1.5px solid #F28B82 !important;
+}
+
+[data-theme="minimal"] .rank-1 .avatar-wrapper {
+  border-color: #F9AB00 !important;
+  box-shadow: 0 0 0 4px rgba(249, 171, 0, 0.2) !important;
+}
+
+[data-theme="minimal"] .dept-tag {
+  background: #E8F0FE !important;
+  color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .p-stat {
+  background: #F8FAFD !important;
+  border: 1px solid #ECEFF1 !important;
+}
+
+/* Minimal Tabs Navigation */
+[data-theme="minimal"] .tabs-navigation {
+  border-bottom: 2px solid #DADCE0 !important;
+}
+
+[data-theme="minimal"] .tab-btn {
+  color: #5F6368 !important;
+}
+
+[data-theme="minimal"] .tab-btn:hover {
+  color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .tab-btn.active {
+  color: #1A73E8 !important;
+  border-bottom-color: #1A73E8 !important;
+  font-weight: 700 !important;
+}
+
+[data-theme="minimal"] .tab-pills-group {
+  background: #F1F3F4 !important;
+  border: 1px solid #DADCE0 !important;
+}
+
+[data-theme="minimal"] .tab-pill {
+  color: #444746 !important;
+}
+
+[data-theme="minimal"] .tab-pill:hover:not(.active) {
+  background: #E1E3E5 !important;
+}
+
+[data-theme="minimal"] .tab-pill.active {
+  background: #C2E7FF !important;
+  color: #001D35 !important;
+  font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+/* Minimal Stat Cards */
+[data-theme="minimal"] .stat-card {
+  background: #FFFFFF !important;
+  border: 1px solid #DADCE0 !important;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.08) !important;
+}
+
+[data-theme="minimal"] .stat-card:hover {
+  border-color: #1A73E8 !important;
+  box-shadow: 0 4px 14px rgba(60, 64, 67, 0.12) !important;
+}
+
+[data-theme="minimal"] .stat-card::before {
+  background: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .stat-card.gold-accent::before {
+  background: #F9AB00 !important;
+}
+
+[data-theme="minimal"] .stat-icon-wrapper {
+  background: #E8F0FE !important;
+  color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .gold-accent .stat-icon-wrapper {
+  background: #FEF7E0 !important;
+  color: #E37400 !important;
+}
+
+/* Minimal Custom Select & Filter Inputs */
+[data-theme="minimal"] .custom-select-trigger {
+  background: #FFFFFF !important;
+  border-color: #DADCE0 !important;
+  color: #3C4043 !important;
+}
+
+[data-theme="minimal"] .custom-select-trigger:hover {
+  border-color: #1A73E8 !important;
+  box-shadow: 0 1px 4px rgba(26, 115, 232, 0.15) !important;
+}
+
+[data-theme="minimal"] .custom-select-trigger.open {
+  border-color: #1A73E8 !important;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.15) !important;
+}
+
+[data-theme="minimal"] .custom-select-menu {
+  background: #FFFFFF !important;
+  border-color: #DADCE0 !important;
+  box-shadow: 0 6px 24px rgba(60, 64, 67, 0.18) !important;
+}
+
+[data-theme="minimal"] .custom-select-option:hover {
+  background: #F1F3F4 !important;
+  color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .custom-select-option.selected {
+  background: #E8F0FE !important;
+  color: #1A73E8 !important;
+  border-left-color: #1A73E8 !important;
+}
+
+[data-theme="minimal"] .select-dropdown {
+  background-color: #FFFFFF !important;
+  border-color: #DADCE0 !important;
+  color: #3C4043 !important;
+}
+
+[data-theme="minimal"] .search-box input {
+  background: #F1F3F4 !important;
+  border: 1px solid #DADCE0 !important;
+  color: #1F1F1F !important;
+}
+
+[data-theme="minimal"] .search-box input:focus {
+  background: #FFFFFF !important;
+  border-color: #1A73E8 !important;
+  box-shadow: 0 1px 6px rgba(60, 64, 67, 0.18) !important;
+}
+
+/* ==========================================================================
+   THEME OVERRIDES: MIDNIGHT DARK MODE POLISH
+   ========================================================================== */
+[data-theme="dark"] .sece-header {
+  background: linear-gradient(135deg, #050D17 0%, #0A192F 60%, #060E1A 100%) !important;
+  border-bottom: 3px solid var(--sece-gold-500) !important;
+}
+
+[data-theme="dark"] .college-logo-badge {
+  background: #0B1728 !important;
+  color: #FFB800 !important;
+  border-color: var(--sece-gold-500) !important;
+}
+
+[data-theme="dark"] .college-title-group h1 {
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .college-title-group p {
+  color: #FFC72C !important;
+}
+
+[data-theme="dark"] .btn-navy {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .btn-navy:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  border-color: var(--sece-gold-400) !important;
+  color: var(--sece-gold-400) !important;
+}
+
+[data-theme="dark"] .theme-color-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #F8FAFC !important;
+}
+
+[data-theme="dark"] .theme-color-btn:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: #38BDF8 !important;
+  color: #38BDF8 !important;
+}
+
+[data-theme="dark"] .tab-pills-group {
+  background: #0B1728 !important;
+  border-color: #1E3452 !important;
+}
+
+[data-theme="dark"] .tab-pill:hover:not(.active) {
+  background: #14243B !important;
+}
+
+[data-theme="dark"] .tab-pill.active {
+  background: rgba(255, 184, 0, 0.18) !important;
+  color: var(--sece-gold-400) !important;
+  border: 1px solid rgba(255, 184, 0, 0.3) !important;
+}
+
 

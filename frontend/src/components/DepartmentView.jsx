@@ -1,6 +1,32 @@
 import React from 'react';
-import { Award, BarChart2, Trophy } from 'lucide-react';
+import { Award, BarChart2, Trophy, Crown, Zap, Sparkles, Users } from 'lucide-react';
 import { COLLEGE_DEPARTMENTS, calculateCompositeScore } from '../data/sampleData';
+
+// Helper to determine student's category tier (Elite, Specialist, Challenger, Solver, Starter)
+function getStudentCategoryTier(student) {
+  if (student.category) {
+    const lower = String(student.category).trim().toLowerCase();
+    if (lower === 'elite') return 'Elite';
+    if (lower === 'specialist') return 'Specialist';
+    if (lower === 'challenger') return 'Challenger';
+    if (lower === 'solver') return 'Solver';
+    return 'Starter';
+  }
+  const score = student.overallScore != null ? Number(student.overallScore) : (student.compositeScore ?? calculateCompositeScore(student));
+  if (score >= 500) {
+    if (score >= 3500) return 'Elite';
+    if (score >= 2500) return 'Specialist';
+    if (score >= 1500) return 'Challenger';
+    if (score >= 800) return 'Solver';
+    return 'Starter';
+  } else {
+    if (score >= 80) return 'Elite';
+    if (score >= 60) return 'Specialist';
+    if (score >= 40) return 'Challenger';
+    if (score >= 20) return 'Solver';
+    return 'Starter';
+  }
+}
 
 export function DepartmentView({ students, onSelectStudent, activeTab = 'college' }) {
   const depts = COLLEGE_DEPARTMENTS.filter(d => d !== 'All');
@@ -80,6 +106,54 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
   const deptRankMap = {};
   sortedDeptStats.forEach((ds, idx) => { deptRankMap[ds.dept] = idx + 1; });
 
+  // -------------------------------------------------------------
+  // Category Breakdown: Elites and Specialists per department
+  // -------------------------------------------------------------
+  const deptCategoryStats = depts.map(deptName => {
+    const deptStudents = students.filter(s => s.department === deptName);
+    const count = deptStudents.length;
+    if (count === 0) return null;
+
+    let elites = 0;
+    let specialists = 0;
+    let challengers = 0;
+    let solvers = 0;
+    let starters = 0;
+
+    deptStudents.forEach(st => {
+      const tier = getStudentCategoryTier(st);
+      if (tier === 'Elite') elites++;
+      else if (tier === 'Specialist') specialists++;
+      else if (tier === 'Challenger') challengers++;
+      else if (tier === 'Solver') solvers++;
+      else starters++;
+    });
+
+    return {
+      dept: deptName,
+      count,
+      elites,
+      specialists,
+      challengers,
+      solvers,
+      starters,
+      combinedEliteSpec: elites + specialists
+    };
+  }).filter(Boolean);
+
+  // Department with the most elite counts
+  const sortedByElites = [...deptCategoryStats].sort((a, b) => {
+    if (b.elites !== a.elites) return b.elites - a.elites;
+    if (b.specialists !== a.specialists) return b.specialists - a.specialists;
+    return b.count - a.count;
+  });
+
+  const topEliteDept = sortedByElites[0] || null;
+  const maxElitesInDept = Math.max(...deptCategoryStats.map(d => d.elites), 1);
+  const maxCombinedCount = Math.max(...deptCategoryStats.map(d => d.elites + d.specialists), 1);
+  const totalElitesCollege = deptCategoryStats.reduce((sum, d) => sum + d.elites, 0);
+  const totalSpecialistsCollege = deptCategoryStats.reduce((sum, d) => sum + d.specialists, 0);
+
   return (
     <section style={{ marginTop: '2.5rem' }}>
       <div className="section-header">
@@ -152,33 +226,212 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
         })}
       </div>
 
-      {/* Visual Bar Comparison Chart */}
-      <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <BarChart2 size={20} color="var(--sece-navy-600)" />
-          <span>
-            {isWeekly 
-              ? 'Total Coding Problems Solved by Department (Weekly Test)' 
-              : (isPgp ? 'Total Solved Programs by Department (SkillRack / PGP)' : (isTopperTab ? 'Total Solved Coding Problems by Department' : 'Total LeetCode Problems Solved by Department'))}
-          </span>
-        </h3>
+      {/* Side-by-Side Half Charts Container */}
+      <div
+        className="dept-dual-charts-grid"
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+          gap: '1.5rem',
+          alignItems: 'stretch'
+        }}
+      >
+        {/* Left Half: Existing Coding Problems Solved Bar Chart */}
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <BarChart2 size={20} color="var(--sece-navy-600)" />
+              <span>
+                {isWeekly
+                  ? 'Total Solved by Dept (Weekly Test)'
+                  : (isPgp ? 'Total Solved by Dept (SkillRack / PGP)' : (isTopperTab ? 'Total Solved Coding Problems by Dept' : 'Total LeetCode Problems Solved'))}
+              </span>
+            </h3>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-primary)', padding: '3px 8px', borderRadius: '6px' }}>
+              Sorted by Volume
+            </span>
+          </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {sortedDeptStats.map(ds => {
-            const currentVal = ds.totalSolved ?? ds.totalMetric ?? 0;
-            const pct = Math.round((currentVal / maxTotalSolved) * 100);
-            return (
-              <div key={ds.dept}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                  <span>{ds.dept}</span>
-                  <span>{currentVal.toLocaleString()} {isWeekly ? 'problems solved' : 'solved'}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, justifyContent: 'space-around' }}>
+            {sortedDeptStats.map(ds => {
+              const currentVal = ds.totalSolved ?? ds.totalMetric ?? 0;
+              const pct = Math.round((currentVal / maxTotalSolved) * 100);
+              return (
+                <div key={ds.dept}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 700 }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="dept-tag" style={{ fontSize: '0.75rem', padding: '1px 6px' }}>{ds.dept}</span>
+                    </span>
+                    <span style={{ color: 'var(--text-main)', fontFeatureSettings: '"tnum"' }}>
+                      {currentVal.toLocaleString()} {isWeekly ? 'problems' : 'solved'} ({pct}%)
+                    </span>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+                  </div>
                 </div>
-                <div className="progress-bar-container">
-                  <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right Half: Elite & Specialist Categories by Department */}
+        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Sparkles size={20} color="var(--sece-gold-500)" />
+              <span>Department Category Tiers (Elites &amp; Specialists)</span>
+            </h3>
+
+            {/* Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#B45309', fontWeight: 800 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#F59E0B' }} />
+                💎 Elite
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#6D28D9', fontWeight: 800 }}>
+                <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#8B5CF6' }} />
+                ⚡ Specialist
+              </span>
+            </div>
+          </div>
+
+          {/* Top Elite Department Standout Callout Banner */}
+          {topEliteDept && (
+            <div
+              className="top-elite-banner"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 184, 0, 0.12) 0%, rgba(217, 155, 0, 0.05) 100%)',
+                border: '1.5px solid var(--sece-gold-500)',
+                borderRadius: '12px',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+                flexWrap: 'wrap',
+                gap: '0.6rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255, 184, 0, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Crown size={20} color="#D99B00" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--sece-gold-600)' }}>
+                    Department with Most Elite Coders
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                    {topEliteDept.dept} Department leads with {topEliteDept.elites} Elites
+                  </div>
                 </div>
               </div>
-            );
-          })}
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ background: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                  💎 {topEliteDept.elites} Elites
+                </span>
+                <span style={{ background: '#F5F3FF', color: '#6D28D9', border: '1px solid #DDD6FE', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                  ⚡ {topEliteDept.specialists} Specialists
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Department Breakdown Bar Comparison */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, justifyContent: 'space-around' }}>
+            {sortedByElites.map(ds => {
+              const isLeader = topEliteDept && ds.dept === topEliteDept.dept && ds.elites > 0;
+              // Bar width relative to max combined count
+              const elitePct = Math.round((ds.elites / maxCombinedCount) * 100);
+              const specPct = Math.round((ds.specialists / maxCombinedCount) * 100);
+
+              return (
+                <div key={ds.dept}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="dept-tag" style={{ fontSize: '0.75rem', padding: '1px 6px' }}>{ds.dept}</span>
+                      {isLeader && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#D99B00', background: 'rgba(255, 184, 0, 0.15)', padding: '1px 5px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <Crown size={11} /> #1 Elite Dept
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+                      <span style={{ color: '#B45309', fontWeight: 800 }}>
+                        💎 {ds.elites}
+                      </span>
+                      <span style={{ color: 'var(--text-muted)' }}>•</span>
+                      <span style={{ color: '#6D28D9', fontWeight: 800 }}>
+                        ⚡ {ds.specialists}
+                      </span>
+                      <span style={{ color: 'var(--text-light)', fontSize: '0.75rem' }}>
+                        ({ds.count} coders)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Dual Segmented Progress Bar */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '12px',
+                      background: 'var(--bg-primary)',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      position: 'relative',
+                      border: '1px solid var(--border-light)'
+                    }}
+                  >
+                    {/* Elite Bar (Gold) */}
+                    <div
+                      style={{
+                        width: `${elitePct}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
+                        transition: 'width 0.8s ease',
+                        borderRight: ds.specialists > 0 ? '1px solid rgba(255,255,255,0.4)' : 'none'
+                      }}
+                      title={`${ds.dept}: ${ds.elites} Elite Coders`}
+                    />
+                    {/* Specialist Bar (Purple) */}
+                    <div
+                      style={{
+                        width: `${specPct}%`,
+                        height: '100%',
+                        background: 'linear-gradient(90deg, #8B5CF6 0%, #A78BFA 100%)',
+                        transition: 'width 0.8s ease'
+                      }}
+                      title={`${ds.dept}: ${ds.specialists} Specialist Coders`}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer Totals */}
+          <div
+            style={{
+              marginTop: '1.25rem',
+              paddingTop: '0.85rem',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
+            }}
+          >
+            <span>Institutional Category Pool</span>
+            <div style={{ display: 'flex', gap: '0.75rem', fontWeight: 800 }}>
+              <span style={{ color: '#B45309' }}>Total Elites: {totalElitesCollege}</span>
+              <span style={{ color: '#6D28D9' }}>Total Specialists: {totalSpecialistsCollege}</span>
+            </div>
+          </div>
         </div>
       </div>
     </section>

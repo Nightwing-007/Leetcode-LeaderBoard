@@ -33,9 +33,17 @@ export default function App() {
   const [backendAvailable, setBackendAvailable] = useState(false);
   const [dashboardStats, setDashboardStats] = useState(null);
 
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('sece_theme') === 'dark';
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('sece_theme');
+    if (saved === 'dark') return 'dark';
+    if (saved === 'minimal') return 'minimal';
+    if (saved === 'classic') return 'classic';
+    if (saved === 'light') return 'classic';
+    return 'classic';
   });
+
+  const darkMode = theme === 'dark';
+  const setDarkMode = (val) => setTheme(val ? 'dark' : 'classic');
 
   const [tvMode, setTvMode] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -59,16 +67,19 @@ export default function App() {
   const [studentToEdit, setStudentToEdit] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  // Sync dark mode HTML attribute
+  // Sync theme HTML attribute
   useEffect(() => {
-    if (darkMode) {
+    if (theme === 'dark') {
       document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('sece_theme', 'dark');
+    } else if (theme === 'minimal') {
+      document.documentElement.setAttribute('data-theme', 'minimal');
+      localStorage.setItem('sece_theme', 'minimal');
     } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('sece_theme', 'light');
+      document.documentElement.setAttribute('data-theme', 'classic');
+      localStorage.setItem('sece_theme', 'classic');
     }
-  }, [darkMode]);
+  }, [theme]);
 
   // Load students data from Backend or IndexedDB fallback
   const loadData = useCallback(async (page = 0, tab = activeTab) => {
@@ -246,6 +257,8 @@ export default function App() {
         onLogout={handleLogout}
         onOpenUpload={() => setIsUploadOpen(true)}
         onToggleTvMode={() => setTvMode(true)}
+        theme={theme}
+        setTheme={setTheme}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         totalCoders={dashboardStats?.totalStudents ?? students.length}
