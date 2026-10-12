@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ShieldCheck, User, Lock, Eye, EyeOff, LogIn, AlertCircle, ArrowLeft } from 'lucide-react';
 import { loginAdmin } from '../api/leaderboardApi';
 
+import seceLogo from '../assets/SECE_Logo.png';
+
 export function AdminLogin({ isAdmin, onLoginSuccess }) {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
@@ -64,7 +66,8 @@ export function AdminLogin({ isAdmin, onLoginSuccess }) {
             gap: '0.4rem',
             textDecoration: 'none',
             fontSize: '0.85rem',
-            padding: '0.45rem 0.85rem'
+            padding: '0.5rem 1.1rem',
+            borderRadius: '9999px'
           }}
         >
           <ArrowLeft size={16} />
@@ -79,8 +82,8 @@ export function AdminLogin({ isAdmin, onLoginSuccess }) {
           width: '100%',
           maxWidth: '440px',
           background: 'var(--bg-card, #FFFFFF)',
-          borderRadius: '16px',
-          boxShadow: '0 12px 40px rgba(0, 40, 85, 0.12)',
+          borderRadius: '24px',
+          boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
           border: '1px solid var(--border-color, #E2E8F0)',
           overflow: 'hidden'
         }}
@@ -95,24 +98,21 @@ export function AdminLogin({ isAdmin, onLoginSuccess }) {
             position: 'relative'
           }}
         >
-          <div
+          <img
+            src={seceLogo}
+            alt="Sri Eshwar College of Engineering"
             style={{
-              width: '56px',
-              height: '56px',
-              borderRadius: '14px',
-              background: 'linear-gradient(135deg, #FFB800, #FFC72C)',
-              color: '#002855',
-              fontWeight: 900,
-              fontSize: '1.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              maxHeight: '56px',
+              width: 'auto',
+              objectFit: 'contain',
               margin: '0 auto 1rem',
-              boxShadow: '0 6px 16px rgba(255, 184, 0, 0.35)'
+              display: 'block',
+              filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25))'
             }}
-          >
-            SE
-          </div>
+            onError={(e) => {
+              e.currentTarget.src = '/SECE_Logo.png';
+            }}
+          />
           <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 800, letterSpacing: '-0.01em', color: '#FFFFFF' }}>
             Sri Eshwar College of Engineering
           </h2>

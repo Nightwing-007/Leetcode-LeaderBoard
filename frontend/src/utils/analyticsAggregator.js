@@ -11,16 +11,15 @@ export function getCategoryFromScoreOrTier(student) {
 
   if (student.category) {
     const norm = String(student.category).trim().toLowerCase();
-    if (norm === 'elite') return 'Elite';
-    if (norm === 'specialist') return 'Specialist';
-    if (norm === 'challenger') return 'Challenger';
-    if (norm === 'solver') return 'Solver';
-    if (norm === 'starter') return 'Starter';
+    if (norm.includes('elite')) return 'Elite';
+    if (norm.includes('specialist')) return 'Specialist';
+    if (norm.includes('challenger')) return 'Challenger';
+    if (norm.includes('solver')) return 'Solver';
+    if (norm.includes('starter')) return 'Starter';
   }
 
-  const score = student.overallScore != null
-    ? Number(student.overallScore)
-    : (student.compositeScore != null ? Number(student.compositeScore) : 0);
+  const rawScore = student.overallScore != null ? student.overallScore : student.compositeScore;
+  const score = isNaN(Number(rawScore)) ? 0 : Number(rawScore);
 
   // If score is on 0-5000 scale vs 0-100 scale:
   if (score >= 500) {
@@ -50,10 +49,13 @@ export function aggregateDepartmentCategories(students = []) {
 
   const deptsMap = {};
 
-  students.forEach((student) => {
+  for (let i = 0; i < students.length; i++) {
+    const student = students[i];
+    if (!student) continue;
+
     const rawDept = student.department || student.dept || 'OTHER';
     const dept = String(rawDept).trim().toUpperCase();
-    if (!dept) return;
+    if (!dept) continue;
 
     if (!deptsMap[dept]) {
       deptsMap[dept] = {
@@ -68,9 +70,13 @@ export function aggregateDepartmentCategories(students = []) {
     }
 
     const tier = getCategoryFromScoreOrTier(student);
-    deptsMap[dept][tier] = (deptsMap[dept][tier] || 0) + 1;
+    if (deptsMap[dept][tier] !== undefined) {
+      deptsMap[dept][tier] += 1;
+    } else {
+      deptsMap[dept].Starter += 1;
+    }
     deptsMap[dept].total += 1;
-  });
+  }
 
   return Object.values(deptsMap).sort((a, b) => b.total - a.total);
 }

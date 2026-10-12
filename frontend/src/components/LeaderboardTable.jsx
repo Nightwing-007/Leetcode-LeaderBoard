@@ -767,7 +767,7 @@ export function LeaderboardTable({
                             {lcGlobalRank > 0 && lcGlobalRank < 900000 ? `#${lcGlobalRank.toLocaleString()}` : (lcRating > 1500 ? `Rating ${Math.round(lcRating)}` : '—')}
                           </td>
                           <td>
-                            <span style={{ fontWeight: 700, color: 'var(--sece-navy-800)' }}>
+                            <span className="skillrack-score" style={{ fontWeight: 700 }}>
                               {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
                             </span>
                           </td>
@@ -798,7 +798,7 @@ export function LeaderboardTable({
                             </span>
                           </td>
                           <td>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--sece-gold-600)', fontWeight: 700 }}>
+                            <span className="skillrack-score" style={{ fontSize: '0.85rem', fontWeight: 700 }}>
                               {pgpPoints > 0 ? `${pgpPoints.toLocaleString()} pts` : '—'}
                             </span>
                           </td>
@@ -833,7 +833,7 @@ export function LeaderboardTable({
                       {activeTab === 'pgp' && (
                         <>
                           <td>
-                            <span className="stat-highlight" style={{ color: '#D99B00', fontSize: '1rem' }}>
+                            <span className="stat-highlight skillrack-score" style={{ color: '#D99B00', fontSize: '1rem' }}>
                               {pgpPoints.toLocaleString()}
                             </span>
                           </td>
@@ -880,15 +880,15 @@ export function LeaderboardTable({
 
       {/* Pagination Controls Toolbar */}
       {totalCount > 0 && (
-        <div className="pagination-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', padding: '1rem 0' }}>
+        <div className="table-footer-pagination">
           {/* Info & Page Size */}
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+          <div className="pagination-info-group">
             <span style={{ whiteSpace: 'nowrap' }}>
               Showing <strong style={{ color: 'var(--text-main)' }}>{startIndex}</strong> to <strong style={{ color: 'var(--text-main)' }}>{endIndex}</strong> of <strong style={{ color: 'var(--text-main)' }}>{totalCount.toLocaleString()}</strong> students
             </span>
 
             {!isServerPaged && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
                 <span>Per page:</span>
                 <select
                   value={pageSize}
@@ -896,8 +896,7 @@ export function LeaderboardTable({
                     setPageSize(e.target.value === 'All' ? 'All' : Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="select-dropdown"
-                  style={{ padding: '0.28rem 0.65rem', fontSize: '0.825rem', borderRadius: '6px' }}
+                  className="select-dropdown pagination-select"
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>
@@ -911,47 +910,43 @@ export function LeaderboardTable({
 
           {/* Navigation Buttons */}
           {(pageSize !== 'All' || isServerPaged) && totalPages > 1 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <div className="pagination-nav-group" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button
-                className="btn-icon"
+                className="btn-icon pagination-btn"
                 onClick={() => handlePageNavigation(1)}
                 disabled={activePage === 1}
                 title="First Page"
-                style={{ opacity: activePage === 1 ? 0.4 : 1, cursor: activePage === 1 ? 'not-allowed' : 'pointer' }}
               >
                 <ChevronsLeft size={16} />
               </button>
 
               <button
-                className="btn-icon"
+                className="btn-icon pagination-btn"
                 onClick={() => handlePageNavigation(activePage - 1)}
                 disabled={activePage === 1}
                 title="Previous Page"
-                style={{ opacity: activePage === 1 ? 0.4 : 1, cursor: activePage === 1 ? 'not-allowed' : 'pointer' }}
               >
                 <ChevronLeft size={16} />
               </button>
 
-              <span className="page-indicator" style={{ padding: '0.3rem 0.8rem', fontSize: '0.85rem', fontWeight: 700, background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
+              <span className="page-indicator">
                 Page {activePage} of {totalPages}
               </span>
 
               <button
-                className="btn-icon"
+                className="btn-icon pagination-btn"
                 onClick={() => handlePageNavigation(activePage + 1)}
                 disabled={activePage === totalPages}
                 title="Next Page"
-                style={{ opacity: activePage === totalPages ? 0.4 : 1, cursor: activePage === totalPages ? 'not-allowed' : 'pointer' }}
               >
                 <ChevronRight size={16} />
               </button>
 
               <button
-                className="btn-icon"
+                className="btn-icon pagination-btn"
                 onClick={() => handlePageNavigation(totalPages)}
                 disabled={activePage === totalPages}
                 title="Last Page"
-                style={{ opacity: activePage === totalPages ? 0.4 : 1, cursor: activePage === totalPages ? 'not-allowed' : 'pointer' }}
               >
                 <ChevronsRight size={16} />
               </button>

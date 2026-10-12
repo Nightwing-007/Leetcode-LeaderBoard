@@ -165,7 +165,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
         {/* Rank 2 - Silver */}
         <div className="podium-card rank-2" onClick={() => onSelectStudent && onSelectStudent(second)}>
           <div className="rank-badge">#2</div>
-          <div className="avatar-wrapper" style={{ color: '#FFFFFF' }}>
+          <div className="avatar-wrapper">
             {second.name ? second.name.charAt(0) : 'S'}
           </div>
           <h3 className="student-name">{second.name}</h3>
@@ -177,7 +177,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
         <div className="podium-card rank-1" onClick={() => onSelectStudent && onSelectStudent(first)}>
           <Crown size={38} className="crown-icon" />
           <div className="rank-badge">#1</div>
-          <div className="avatar-wrapper" style={{ color: '#FFFFFF' }}>
+          <div className="avatar-wrapper">
             {first.name ? first.name.charAt(0) : 'S'}
           </div>
           <h3 className="student-name" style={{ fontSize: '1.35rem' }}>{first.name}</h3>
@@ -190,7 +190,7 @@ export function Podium({ top3, activeTab = 'leetcode', onSelectStudent, soundEna
         {/* Rank 3 - Bronze */}
         <div className="podium-card rank-3" onClick={() => onSelectStudent && onSelectStudent(third)}>
           <div className="rank-badge">#3</div>
-          <div className="avatar-wrapper" style={{ color: '#FFFFFF' }}>
+          <div className="avatar-wrapper">
             {third.name ? third.name.charAt(0) : 'S'}
           </div>
           <h3 className="student-name">{third.name}</h3>

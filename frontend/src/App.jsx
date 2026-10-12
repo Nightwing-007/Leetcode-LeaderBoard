@@ -35,6 +35,7 @@ function Dashboard({
   setDarkMode
 }) {
   const [students, setStudents] = useState([]);
+  const [allCollegeStudents, setAllCollegeStudents] = useState([]);
   const [activeTab, setActiveTab] = useState('college');
   const [backendAvailable, setBackendAvailable] = useState(false);
   const [dashboardStats, setDashboardStats] = useState(null);
@@ -86,6 +87,26 @@ function Dashboard({
         fetchDashboardStatistics()
           .then((stats) => setDashboardStats(stats))
           .catch(() => {});
+
+        // Fetch unpaginated dataset for entire college analytics & charts
+        fetchLeaderboard('overall', {
+          dept: selectedDept,
+          batch: selectedBatch,
+          academicYear: selectedAcademicYear,
+          section: selectedSection,
+          gender: selectedGender,
+          query: searchQuery,
+          page: null,
+          size: null
+        })
+          .then((allData) => {
+            const fullList = Array.isArray(allData?.content) ? allData.content : (Array.isArray(allData) ? allData : []);
+            if (fullList.length > 0) {
+              setAllCollegeStudents(fullList);
+            }
+          })
+          .catch(() => {});
+
         return;
       }
     } catch (err) {
@@ -96,13 +117,16 @@ function Dashboard({
       const recordsFromDb = await dbGetAllStudents();
       if (recordsFromDb && recordsFromDb.length > 0) {
         setStudents(recordsFromDb);
+        setAllCollegeStudents(recordsFromDb);
       } else {
         await dbReplaceAllStudents(INITIAL_STUDENTS_DATA);
         const seeded = await dbGetAllStudents();
         setStudents(seeded);
+        setAllCollegeStudents(seeded);
       }
     } catch (err) {
       setStudents(INITIAL_STUDENTS_DATA);
+      setAllCollegeStudents(INITIAL_STUDENTS_DATA);
     }
   }, [activeTab, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
 
@@ -115,10 +139,18 @@ function Dashboard({
     loadData(newPage, activeTab);
   };
 
+  // Unpaginated full dataset across the college
+  const fullStudentsList = useMemo(() => {
+    if (allCollegeStudents && allCollegeStudents.length > 0) {
+      return allCollegeStudents;
+    }
+    return students;
+  }, [allCollegeStudents, students]);
+
+  // Full filtered dataset BEFORE pagination slice is applied
   const filteredStudents = useMemo(() => {
-    if (backendAvailable) return students;
     const q = (searchQuery || '').toLowerCase().trim();
-    return students.filter((st) => {
+    return fullStudentsList.filter((st) => {
       const matchesDept = selectedDept === 'All' || st.department === selectedDept;
       const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
       const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
@@ -133,10 +165,10 @@ function Dashboard({
         (st.leetcodeId && st.leetcodeId.toLowerCase().includes(q));
       return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender && matchesSearch;
     });
-  }, [backendAvailable, students, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
+  }, [fullStudentsList, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
 
   const top3Rankers = useMemo(() => {
-    const listToRank = filteredStudents.length > 0 ? filteredStudents : students;
+    const listToRank = filteredStudents.length > 0 ? filteredStudents : fullStudentsList;
     return [...listToRank]
       .sort((a, b) => {
         if (['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)) {
@@ -170,7 +202,7 @@ function Dashboard({
         return cb - ca;
       })
       .slice(0, 3);
-  }, [students, filteredStudents, activeTab]);
+  }, [fullStudentsList, filteredStudents, activeTab]);
 
   const handleUploadSuccess = async (newStudentsList, detectedType) => {
     const typeToSet = detectedType || newStudentsList?.detectedType || 'college';
@@ -180,6 +212,7 @@ function Dashboard({
 
     if (newStudentsList && newStudentsList.length > 0) {
       setStudents(newStudentsList);
+      setAllCollegeStudents(newStudentsList);
     } else {
       await loadData(0, typeToSet);
     }
@@ -194,6 +227,7 @@ function Dashboard({
         await dbSaveStudent(savedStudent);
         const updated = await dbGetAllStudents();
         setStudents(updated);
+        setAllCollegeStudents(updated);
       }
     } catch (err) {
       console.error('Failed to save student:', err);
@@ -210,6 +244,7 @@ function Dashboard({
           await dbDeleteStudent(studentRollOrId);
           const updated = await dbGetAllStudents();
           setStudents(updated);
+          setAllCollegeStudents(updated);
         }
       } catch (err) {
         console.error('Failed to delete student:', err);
@@ -229,13 +264,14 @@ function Dashboard({
         setTheme={setTheme}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
-        totalCoders={dashboardStats?.totalStudents ?? students.length}
+        totalCoders={dashboardStats?.totalStudents ?? fullStudentsList.length}
       />
 
       {/* Main Content Area */}
       <main className="main-wrapper">
         {/* KPI Institutional Metrics & Department-Wise Category Breakdown */}
         <AnalyticsView
+          data={filteredStudents}
           students={filteredStudents}
           activeTab={activeTab}
           dashboardStats={dashboardStats}
@@ -282,7 +318,7 @@ function Dashboard({
 
         {/* Departmental Comparison */}
         <DepartmentView
-          students={students}
+          students={fullStudentsList}
           activeTab={activeTab}
           onSelectStudent={(st) => setSelectedStudent(st)}
         />

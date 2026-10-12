@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Users,
+  Code,
   Award,
   Trophy,
   Zap,
@@ -113,15 +114,22 @@ function CategoryTooltip({ active, payload, label }) {
   );
 }
 
-export function AnalyticsView({ students = [], activeTab = 'college', dashboardStats = null }) {
+export function AnalyticsView({ students = [], data, activeTab = 'college', dashboardStats = null }) {
   const [chartMode, setChartMode] = useState('stacked'); // 'stacked' | 'grouped'
 
-  const totalStudents = dashboardStats?.totalStudents ?? students.length;
+  // Standardize input data (accept either data or students prop, unpaginated)
+  const effectiveStudents = useMemo(() => {
+    if (Array.isArray(data) && data.length > 0) return data;
+    if (Array.isArray(students)) return students;
+    return [];
+  }, [data, students]);
 
-  // Aggregate Category breakdown per Department using our utility
+  const totalStudents = dashboardStats?.totalStudents ?? effectiveStudents.length;
+
+  // Aggregate Category breakdown per Department using our hardened utility
   const departmentCategoryData = useMemo(() => {
-    return aggregateDepartmentCategories(students);
-  }, [students]);
+    return aggregateDepartmentCategories(effectiveStudents);
+  }, [effectiveStudents]);
 
   // Overall totals across categories for summary badges
   const categoryTotals = useMemo(() => {
@@ -136,82 +144,152 @@ export function AnalyticsView({ students = [], activeTab = 'college', dashboardS
     return totals;
   }, [departmentCategoryData]);
 
-  // 1. Codeforces Ranking (Best Rank across students)
-  const cfRanks = students
-    .map((s) => {
-      if (s.codeforcesRank != null && Number(s.codeforcesRank) > 0) return Number(s.codeforcesRank);
-      if (Array.isArray(s.platformPerformance)) {
-        const p = s.platformPerformance.find((item) =>
-          item.platformName?.toLowerCase().includes('codeforces')
-        );
-        if (p?.globalRank && Number(p.globalRank) > 0) return Number(p.globalRank);
+  // 1. LeetCode Active Count (non-null/non-zero score, rating, or rank on LeetCode)
+  const leetCodeActiveCount = useMemo(() => {
+    return effectiveStudents.filter((s) => {
+      if (!s) return false;
+      const lcSolved = s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0;
+      const lcRank = s.leetcode?.globalRank ?? s.lcGlobalRank ?? 0;
+      const lcRating = s.leetcode?.contestRating ?? s.lcContestRating ?? 0;
+      const lcUsername = s.leetcode?.leetcodeId || s.leetcodeId;
+      if (lcSolved > 0 || (lcRank > 0 && lcRank < 900000) || lcRating > 0 || (lcUsername && lcUsername !== 'N/A')) {
+        return true;
       }
-      return null;
-    })
-    .filter(Boolean);
-  const bestCodeforcesRank =
-    cfRanks.length > 0 ? Math.min(...cfRanks) : dashboardStats?.topCodeforcesRank ?? 1240;
-
-  // 2. AtCoder Ranking (Best Rank across students)
-  const atcoderRanks = students
-    .map((s) => {
-      if (s.atcoderRank != null && Number(s.atcoderRank) > 0) return Number(s.atcoderRank);
       if (Array.isArray(s.platformPerformance)) {
-        const p = s.platformPerformance.find((item) =>
-          item.platformName?.toLowerCase().includes('atcoder')
+        return s.platformPerformance.some(
+          (p) =>
+            p?.platformName?.toLowerCase().includes('leet') &&
+            (Number(p.problemsSolved) > 0 || Number(p.globalRank) > 0 || Number(p.contestRating) > 0)
         );
-        if (p?.globalRank && Number(p.globalRank) > 0) return Number(p.globalRank);
       }
-      return null;
-    })
-    .filter(Boolean);
-  const bestAtcoderRank =
-    atcoderRanks.length > 0 ? Math.min(...atcoderRanks) : dashboardStats?.topAtcoderRank ?? 1850;
+      return false;
+    }).length;
+  }, [effectiveStudents]);
 
-  // 3. Digri (Degre.AI) Average Score
-  const digriScores = students
-    .map((s) => {
-      if (s.degreScore != null && Number(s.degreScore) > 0) return Number(s.degreScore);
-      if (s.degreAiAssessmentScore != null && Number(s.degreAiAssessmentScore) > 0)
-        return Number(s.degreAiAssessmentScore);
+  // 2. SkillRack Active Count (non-null/non-zero score or rank on SkillRack / PGP)
+  const skillRackActiveCount = useMemo(() => {
+    return effectiveStudents.filter((s) => {
+      if (!s) return false;
+      const srPoints = s.pgp?.points ?? s.pgpPoints ?? 0;
+      const srSolved = s.pgp?.programsSolved ?? s.pgpProgramsSolved ?? 0;
+      const srRank = s.pgp?.skillrackRank ?? s.pgpSkillrackRank ?? 0;
+      const srUsername = s.pgp?.skillrackUsername || s.skillrackUsername;
+      if (srPoints > 0 || srSolved > 0 || (srRank > 0 && srRank < 900000) || (srUsername && srUsername !== 'N/A')) {
+        return true;
+      }
       if (Array.isArray(s.platformPerformance)) {
-        const p = s.platformPerformance.find((item) =>
-          item.platformName?.toLowerCase().includes('degre')
+        return s.platformPerformance.some(
+          (p) =>
+            (p?.platformName?.toLowerCase().includes('skill') || p?.platformName?.toLowerCase().includes('pgp')) &&
+            (Number(p.problemsSolved) > 0 || Number(p.assessmentScore) > 0 || Number(p.globalRank) > 0)
         );
-        if (p?.assessmentScore != null && Number(p.assessmentScore) > 0)
-          return Number(p.assessmentScore);
       }
-      return null;
-    })
-    .filter(Boolean);
-  const avgDigriScore =
-    digriScores.length > 0
-      ? Math.round((digriScores.reduce((a, b) => a + b, 0) / digriScores.length) * 10) / 10
-      : dashboardStats?.avgDegreScore ?? 86.4;
+      return false;
+    }).length;
+  }, [effectiveStudents]);
 
-  // Weekly Assessment Stats
-  const weeklyStudents = students.filter(
-    (s) => (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) > 0
-  );
-  const weeklyCount = weeklyStudents.length;
-  const maxWeeklyScore =
-    weeklyCount > 0
-      ? Math.max(...weeklyStudents.map((s) => s.weeklyAssessment?.score ?? s.weeklyScore ?? 0))
-      : 0;
-  const centumScorers = weeklyStudents.filter(
-    (s) => (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) >= 100
-  ).length;
-  const avgWeeklyScore =
-    weeklyCount > 0
-      ? Math.round(
-          weeklyStudents.reduce(
-            (sum, s) => sum + (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0),
-            0
-          ) / weeklyCount
-        )
-      : 0;
+  // 3. Multi-platform rankings and weekly assessment stats fully memoized
+  const {
+    bestCodeforcesRank,
+    bestAtcoderRank,
+    avgDigriScore,
+    weeklyCount,
+    maxWeeklyScore,
+    centumScorers,
+    avgWeeklyScore,
+    deptsCount
+  } = useMemo(() => {
+    // 1. Codeforces Ranking (Best Rank across students)
+    const cfRanks = effectiveStudents
+      .map((s) => {
+        if (!s) return null;
+        if (s.codeforcesRank != null && Number(s.codeforcesRank) > 0) return Number(s.codeforcesRank);
+        if (Array.isArray(s.platformPerformance)) {
+          const p = s.platformPerformance.find((item) =>
+            item?.platformName?.toLowerCase().includes('codeforces')
+          );
+          if (p?.globalRank && Number(p.globalRank) > 0) return Number(p.globalRank);
+        }
+        return null;
+      })
+      .filter(Boolean);
+    const bestCodeforcesRankVal =
+      cfRanks.length > 0 ? Math.min(...cfRanks) : dashboardStats?.topCodeforcesRank ?? 1240;
 
-  const deptsCount = new Set(students.map((s) => s.department)).size || 10;
+    // 2. AtCoder Ranking (Best Rank across students)
+    const atcoderRanks = effectiveStudents
+      .map((s) => {
+        if (!s) return null;
+        if (s.atcoderRank != null && Number(s.atcoderRank) > 0) return Number(s.atcoderRank);
+        if (Array.isArray(s.platformPerformance)) {
+          const p = s.platformPerformance.find((item) =>
+            item?.platformName?.toLowerCase().includes('atcoder')
+          );
+          if (p?.globalRank && Number(p.globalRank) > 0) return Number(p.globalRank);
+        }
+        return null;
+      })
+      .filter(Boolean);
+    const bestAtcoderRankVal =
+      atcoderRanks.length > 0 ? Math.min(...atcoderRanks) : dashboardStats?.topAtcoderRank ?? 1850;
+
+    // 3. Digri (Degre.AI) Average Score
+    const digriScores = effectiveStudents
+      .map((s) => {
+        if (!s) return null;
+        if (s.degreScore != null && Number(s.degreScore) > 0) return Number(s.degreScore);
+        if (s.degreAiAssessmentScore != null && Number(s.degreAiAssessmentScore) > 0)
+          return Number(s.degreAiAssessmentScore);
+        if (Array.isArray(s.platformPerformance)) {
+          const p = s.platformPerformance.find((item) =>
+            item?.platformName?.toLowerCase().includes('degre')
+          );
+          if (p?.assessmentScore != null && Number(p.assessmentScore) > 0)
+            return Number(p.assessmentScore);
+        }
+        return null;
+      })
+      .filter(Boolean);
+    const avgDigriScoreVal =
+      digriScores.length > 0
+        ? Math.round((digriScores.reduce((a, b) => a + b, 0) / digriScores.length) * 10) / 10
+        : dashboardStats?.avgDegreScore ?? 86.4;
+
+    // Weekly Assessment Stats
+    const weeklyStudents = effectiveStudents.filter(
+      (s) => s && (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) > 0
+    );
+    const weeklyCountVal = weeklyStudents.length;
+    const maxWeeklyScoreVal =
+      weeklyCountVal > 0
+        ? Math.max(...weeklyStudents.map((s) => s.weeklyAssessment?.score ?? s.weeklyScore ?? 0))
+        : 0;
+    const centumScorersVal = weeklyStudents.filter(
+      (s) => (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0) >= 100
+    ).length;
+    const avgWeeklyScoreVal =
+      weeklyCountVal > 0
+        ? Math.round(
+            weeklyStudents.reduce(
+              (sum, s) => sum + (s.weeklyAssessment?.score ?? s.weeklyScore ?? 0),
+              0
+            ) / weeklyCountVal
+          )
+        : 0;
+
+    const deptsCountVal = new Set(effectiveStudents.map((s) => s?.department).filter(Boolean)).size || 10;
+
+    return {
+      bestCodeforcesRank: bestCodeforcesRankVal,
+      bestAtcoderRank: bestAtcoderRankVal,
+      avgDigriScore: avgDigriScoreVal,
+      weeklyCount: weeklyCountVal,
+      maxWeeklyScore: maxWeeklyScoreVal,
+      centumScorers: centumScorersVal,
+      avgWeeklyScore: avgWeeklyScoreVal,
+      deptsCount: deptsCountVal
+    };
+  }, [effectiveStudents, dashboardStats]);
 
   return (
     <div className="analytics-section-wrapper" style={{ marginBottom: '1.75rem' }}>
@@ -280,16 +358,35 @@ export function AnalyticsView({ students = [], activeTab = 'college', dashboardS
         </div>
       ) : (
         <div className="stats-grid">
-          {/* 1. Active Coders */}
-          <div className="stat-card gold-accent">
-            <div className="stat-icon-wrapper">
-              <Users size={24} />
+          {/* 1. LeetCode Active */}
+          <div className="stat-card">
+            <div
+              className="stat-icon-wrapper"
+              style={{ background: 'rgba(255, 161, 22, 0.12)', color: '#FFA116' }}
+            >
+              <Code size={24} />
             </div>
             <div className="stat-info">
-              <div className="stat-value">
-                <AnimatedValue value={totalStudents} />
+              <div className="stat-value" style={{ color: '#D97706' }}>
+                <AnimatedValue value={leetCodeActiveCount || totalStudents} />
               </div>
-              <div className="stat-label">Active Student Coders</div>
+              <div className="stat-label">LeetCode Active</div>
+            </div>
+          </div>
+
+          {/* 2. SkillRack Active */}
+          <div className="stat-card gold-accent">
+            <div
+              className="stat-icon-wrapper"
+              style={{ background: 'rgba(255, 184, 0, 0.12)', color: '#FFB800' }}
+            >
+              <Zap size={24} />
+            </div>
+            <div className="stat-info">
+              <div className="stat-value" style={{ color: '#B45309' }}>
+                <AnimatedValue value={skillRackActiveCount || totalStudents} />
+              </div>
+              <div className="stat-label">SkillRack Active</div>
             </div>
           </div>
 
@@ -364,9 +461,9 @@ export function AnalyticsView({ students = [], activeTab = 'college', dashboardS
             marginTop: '1.25rem',
             background: 'var(--bg-card, #FFFFFF)',
             border: '1px solid var(--border-color, #E2E8F0)',
-            borderRadius: 'var(--radius-lg, 14px)',
-            padding: '1.25rem 1.5rem',
-            boxShadow: '0 4px 20px rgba(0, 40, 85, 0.05)',
+            borderRadius: '24px',
+            padding: '1.5rem',
+            boxShadow: '0 4px 24px rgba(0, 0, 0, 0.04)',
             transition: 'box-shadow var(--transition-med) ease'
           }}
         >

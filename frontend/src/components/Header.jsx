@@ -6,6 +6,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { ThemeSelector } from './ThemeSelector';
+import seceLogo from '../assets/SECE_Logo.png';
 
 export function Header({
   isAdmin,
@@ -23,9 +24,15 @@ export function Header({
       <div className="header-container">
         {/* Brand Logo & Name */}
         <div className="brand-section">
-          <div className="college-logo-badge" title="Sri Eshwar College of Engineering">
-            SE
-          </div>
+          <img
+            src={seceLogo}
+            alt="Sri Eshwar College of Engineering"
+            className="college-logo-img"
+            style={{ maxHeight: '48px', width: 'auto', objectFit: 'contain' }}
+            onError={(e) => {
+              e.currentTarget.src = '/SECE_Logo.png';
+            }}
+          />
           <div className="college-title-group">
             <h1>Sri Eshwar College of Engineering</h1>
             <p>Leaderboard Portal</p>
@@ -70,8 +77,8 @@ export function Header({
                     color: '#10B981',
                     fontWeight: 800,
                     background: 'rgba(16,185,129,0.12)',
-                    padding: '4px 8px',
-                    borderRadius: '6px'
+                    padding: '4px 10px',
+                    borderRadius: '9999px'
                   }}
                 >
                   Admin Active
