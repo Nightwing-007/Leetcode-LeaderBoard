@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Header } from './components/Header';
 import { AnalyticsView } from './components/AnalyticsView';
 import { Podium } from './components/Podium';
@@ -7,12 +8,11 @@ import { DepartmentView } from './components/DepartmentView';
 import { TvModeSlideshow } from './components/TvModeSlideshow';
 import { ExcelUploaderModal } from './components/ExcelUploaderModal';
 import { DataEditorModal } from './components/DataEditorModal';
+import { AdminLogin } from './components/AdminLogin';
 import { INITIAL_STUDENTS_DATA, calculateCompositeScore } from './data/sampleData';
 import {
   fetchLeaderboard,
-  fetchPodium,
   fetchDashboardStatistics,
-  fetchAnalyticsSummary,
   deleteStudentFromBackend,
   saveStudentToBackend,
   getAdminToken,
@@ -25,27 +25,22 @@ import {
   dbDeleteStudent
 } from './db/database';
 
-export default function App() {
-  const [isAdmin, setIsAdmin] = useState(() => Boolean(getAdminToken()));
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
+function Dashboard({
+  isAdmin,
+  setIsAdmin,
+  handleLogout,
+  theme,
+  setTheme,
+  darkMode,
+  setDarkMode
+}) {
   const [students, setStudents] = useState([]);
-  const [activeTab, setActiveTab] = useState('college'); // 'college' | 'year' | 'department' | 'dept_year' | 'class' | 'pgp' | 'leetcode' | 'weekly'
+  const [activeTab, setActiveTab] = useState('college');
   const [backendAvailable, setBackendAvailable] = useState(false);
   const [dashboardStats, setDashboardStats] = useState(null);
 
-  const [theme, setTheme] = useState(() => {
-    const saved = localStorage.getItem('sece_theme');
-    if (saved === 'dark') return 'dark';
-    if (saved === 'antigravity' || saved === 'minimal') return 'antigravity';
-    if (saved === 'classic' || saved === 'light') return 'classic';
-    return 'classic';
-  });
-
-  const darkMode = theme === 'dark';
-  const setDarkMode = (val) => setTheme(val ? 'dark' : 'classic');
-
   const [tvMode, setTvMode] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled] = useState(true);
 
   // Filters state
   const [selectedDept, setSelectedDept] = useState('All');
@@ -65,20 +60,6 @@ export default function App() {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [studentToEdit, setStudentToEdit] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
-
-  // Sync theme HTML attribute
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('sece_theme', 'dark');
-    } else if (theme === 'antigravity' || theme === 'minimal') {
-      document.documentElement.setAttribute('data-theme', 'antigravity');
-      localStorage.setItem('sece_theme', 'antigravity');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'classic');
-      localStorage.setItem('sece_theme', 'classic');
-    }
-  }, [theme]);
 
   // Load students data from Backend or IndexedDB fallback
   const loadData = useCallback(async (page = 0, tab = activeTab) => {
@@ -102,9 +83,8 @@ export default function App() {
         setServerPage(page);
         setBackendAvailable(true);
 
-        // Fetch Dashboard Statistics asynchronously
         fetchDashboardStatistics()
-          .then(stats => setDashboardStats(stats))
+          .then((stats) => setDashboardStats(stats))
           .catch(() => {});
         return;
       }
@@ -130,23 +110,22 @@ export default function App() {
     loadData(0, activeTab);
   }, [loadData, activeTab]);
 
-  // Handle server-side page navigation
   const handlePageChange = (newPage) => {
     setServerPage(newPage);
     loadData(newPage, activeTab);
   };
 
-  // Synchronized client-side filtering across the entire dashboard
   const filteredStudents = useMemo(() => {
     if (backendAvailable) return students;
     const q = (searchQuery || '').toLowerCase().trim();
-    return students.filter(st => {
+    return students.filter((st) => {
       const matchesDept = selectedDept === 'All' || st.department === selectedDept;
       const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
       const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
       const matchesSection = selectedSection === 'All' || (st.section && st.section.toUpperCase() === selectedSection.toUpperCase());
       const matchesGender = selectedGender === 'All' || st.gender === selectedGender;
-      const matchesSearch = !q ||
+      const matchesSearch =
+        !q ||
         st.name?.toLowerCase().includes(q) ||
         st.rollNo?.toLowerCase().includes(q) ||
         st.registerNumber?.toLowerCase().includes(q) ||
@@ -156,7 +135,6 @@ export default function App() {
     });
   }, [backendAvailable, students, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
 
-  // Compute Top 3 for Hall of Fame Podium with React.useMemo for instant updates
   const top3Rankers = useMemo(() => {
     const listToRank = filteredStudents.length > 0 ? filteredStudents : students;
     return [...listToRank]
@@ -194,7 +172,6 @@ export default function App() {
       .slice(0, 3);
   }, [students, filteredStudents, activeTab]);
 
-  // Handler when new Excel file is uploaded
   const handleUploadSuccess = async (newStudentsList, detectedType) => {
     const typeToSet = detectedType || newStudentsList?.detectedType || 'college';
     if (typeToSet) {
@@ -208,7 +185,6 @@ export default function App() {
     }
   };
 
-  // Handler for adding/editing a student
   const handleSaveStudent = async (savedStudent) => {
     try {
       if (backendAvailable) {
@@ -220,13 +196,12 @@ export default function App() {
         setStudents(updated);
       }
     } catch (err) {
-      console.error("Failed to save student:", err);
+      console.error('Failed to save student:', err);
     }
   };
 
-  // Handler for deleting a student
   const handleDeleteStudent = async (studentRollOrId) => {
-    if (window.confirm("Are you sure you want to remove this student record?")) {
+    if (window.confirm('Are you sure you want to remove this student record?')) {
       try {
         if (backendAvailable) {
           await deleteStudentFromBackend(studentRollOrId);
@@ -237,14 +212,9 @@ export default function App() {
           setStudents(updated);
         }
       } catch (err) {
-        console.error("Failed to delete student:", err);
+        console.error('Failed to delete student:', err);
       }
     }
-  };
-
-  const handleLogout = () => {
-    removeAdminToken();
-    setIsAdmin(false);
   };
 
   return (
@@ -252,7 +222,6 @@ export default function App() {
       {/* SECE College Header */}
       <Header
         isAdmin={isAdmin}
-        onLoginSuccess={() => setIsAdmin(true)}
         onLogout={handleLogout}
         onOpenUpload={() => setIsUploadOpen(true)}
         onToggleTvMode={() => setTvMode(true)}
@@ -265,7 +234,7 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="main-wrapper">
-        {/* KPI Institutional Metrics */}
+        {/* KPI Institutional Metrics & Department-Wise Category Breakdown */}
         <AnalyticsView
           students={filteredStudents}
           activeTab={activeTab}
@@ -299,7 +268,10 @@ export default function App() {
           setSearchQuery={setSearchQuery}
           selectedStudent={selectedStudent}
           onSelectStudent={(st) => setSelectedStudent(st)}
-          onEditStudent={(st) => { setStudentToEdit(st); setIsEditorOpen(true); }}
+          onEditStudent={(st) => {
+            setStudentToEdit(st);
+            setIsEditorOpen(true);
+          }}
           onDeleteStudent={handleDeleteStudent}
           isAdmin={isAdmin}
           serverPage={backendAvailable ? serverPage : undefined}
@@ -341,7 +313,7 @@ export default function App() {
         studentToEdit={studentToEdit}
       />
 
-      {/* Footer */}
+      {/* Footer with subtle Admin Login Link */}
       <footer className="app-footer">
         <p style={{ fontWeight: 700, color: 'var(--text-muted)' }}>
           Sri Eshwar College of Engineering • Department of Technical Training
@@ -349,7 +321,113 @@ export default function App() {
         <p style={{ marginTop: '0.25rem', fontSize: '0.75rem' }}>
           College Performance Dashboard — Dynamic PostgreSQL Views • LeetCode • SkillRack • Multi-Platform Isolation
         </p>
+        <div style={{ marginTop: '0.75rem' }}>
+          {isAdmin ? (
+            <span style={{ fontSize: '0.75rem', color: '#10B981', fontWeight: 700 }}>
+              Authenticated Admin Active •{' '}
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EF4444',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  padding: 0
+                }}
+              >
+                Sign Out
+              </button>
+            </span>
+          ) : (
+            <Link
+              to="/login"
+              style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-muted)',
+                textDecoration: 'none',
+                opacity: 0.7,
+                transition: 'opacity 0.2s',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.7')}
+            >
+              <span>🔒 Admin Portal Access</span>
+            </Link>
+          )}
+        </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  const [isAdmin, setIsAdmin] = useState(() => Boolean(getAdminToken()));
+
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('sece_theme');
+    if (saved === 'dark') return 'dark';
+    if (saved === 'antigravity' || saved === 'minimal') return 'antigravity';
+    if (saved === 'classic' || saved === 'light') return 'classic';
+    return 'classic';
+  });
+
+  const darkMode = theme === 'dark';
+  const setDarkMode = (val) => setTheme(val ? 'dark' : 'classic');
+
+  // Sync theme HTML attribute
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('sece_theme', 'dark');
+    } else if (theme === 'antigravity' || theme === 'minimal') {
+      document.documentElement.setAttribute('data-theme', 'antigravity');
+      localStorage.setItem('sece_theme', 'antigravity');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'classic');
+      localStorage.setItem('sece_theme', 'classic');
+    }
+  }, [theme]);
+
+  const handleLogout = () => {
+    removeAdminToken();
+    setIsAdmin(false);
+  };
+
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Dashboard
+              isAdmin={isAdmin}
+              setIsAdmin={setIsAdmin}
+              handleLogout={handleLogout}
+              theme={theme}
+              setTheme={setTheme}
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+            />
+          }
+        />
+        <Route
+          path="/login"
+          element={
+            <AdminLogin
+              isAdmin={isAdmin}
+              onLoginSuccess={() => setIsAdmin(true)}
+            />
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

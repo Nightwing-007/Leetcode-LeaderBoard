@@ -18,6 +18,12 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) {
             return 'icons-vendor';
           }
+          if (id.includes('node_modules/recharts') || id.includes('node_modules/d3-')) {
+            return 'charts-vendor';
+          }
+          if (id.includes('node_modules/react-router')) {
+            return 'router-vendor';
+          }
         }
       }
     }
