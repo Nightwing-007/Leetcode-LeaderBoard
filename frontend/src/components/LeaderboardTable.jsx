@@ -577,7 +577,6 @@ export function LeaderboardTable({
                   <th style={{ minWidth: '120px' }}>Global Rank</th>
                   <th style={{ minWidth: '100px' }}>Rating</th>
                   <th style={{ minWidth: '100px' }}>Contests</th>
-                  <th style={{ minWidth: '120px' }}>Solved (ALL)</th>
                   <th style={{ minWidth: '150px' }}>Easy / Med / Hard</th>
                 </>
               )}
@@ -821,11 +820,6 @@ export function LeaderboardTable({
                           </td>
                           <td>{lcContests}</td>
                           <td>
-                            <span className="stat-highlight" style={{ color: '#10B981' }}>
-                              {lcSolved}
-                            </span>
-                          </td>
-                          <td>
                             <div style={{ fontSize: '0.8rem', display: 'flex', gap: '6px' }}>
                               <span style={{ color: '#10B981' }}>{lcEasy}E</span>
                               <span style={{ color: '#F59E0B' }}>{lcMed}M</span>
@@ -888,13 +882,13 @@ export function LeaderboardTable({
       {totalCount > 0 && (
         <div className="pagination-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', padding: '1rem 0' }}>
           {/* Info & Page Size */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-            <span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+            <span style={{ whiteSpace: 'nowrap' }}>
               Showing <strong style={{ color: 'var(--text-main)' }}>{startIndex}</strong> to <strong style={{ color: 'var(--text-main)' }}>{endIndex}</strong> of <strong style={{ color: 'var(--text-main)' }}>{totalCount.toLocaleString()}</strong> students
             </span>
 
             {!isServerPaged && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}>
                 <span>Per page:</span>
                 <select
                   value={pageSize}
@@ -903,7 +897,7 @@ export function LeaderboardTable({
                     setCurrentPage(1);
                   }}
                   className="select-dropdown"
-                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.8rem', borderRadius: '6px' }}
+                  style={{ padding: '0.28rem 0.65rem', fontSize: '0.825rem', borderRadius: '6px' }}
                 >
                   <option value={25}>25</option>
                   <option value={50}>50</option>

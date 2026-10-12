@@ -70,7 +70,7 @@ export function Header({
           </div>
           <div className="college-title-group">
             <h1>Sri Eshwar College of Engineering</h1>
-            <p>Department of Technical Training • Performance Portal</p>
+            <p>Leaderboard Portal</p>
           </div>
         </div>
 

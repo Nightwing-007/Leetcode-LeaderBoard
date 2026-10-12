@@ -150,7 +150,7 @@ final_scores AS (
         department,
         section,
         base_cumulative_score,
-        ROUND((PERCENT_RANK() OVER (ORDER BY base_cumulative_score ASC) * 100)::numeric, 2) AS ct_score
+        ROUND(base_cumulative_score::numeric, 2) AS ct_score
     FROM base_cumulative
 )
 SELECT
