@@ -62,8 +62,17 @@ function Dashboard({
   const [studentToEdit, setStudentToEdit] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
+  // Debounce search query so server isn't hit on every single keystroke
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   // Load students data from Backend or IndexedDB fallback
-  const loadData = useCallback(async (page = 0, tab = activeTab) => {
+  const loadData = useCallback(async (page = 0, tab = activeTab, queryParam = debouncedSearchQuery) => {
     try {
       const data = await fetchLeaderboard(tab, {
         dept: selectedDept,
@@ -71,7 +80,7 @@ function Dashboard({
         academicYear: selectedAcademicYear,
         section: selectedSection,
         gender: selectedGender,
-        query: searchQuery,
+        query: queryParam,
         page: page,
         size: 50
       });
@@ -89,13 +98,13 @@ function Dashboard({
           .catch(() => {});
 
         // Fetch unpaginated dataset for entire college analytics & charts
+        // CRITICAL: NEVER pass query here so full cohort data is never stripped!
         fetchLeaderboard('overall', {
           dept: selectedDept,
           batch: selectedBatch,
           academicYear: selectedAcademicYear,
           section: selectedSection,
           gender: selectedGender,
-          query: searchQuery,
           page: null,
           size: null
         })
@@ -128,7 +137,7 @@ function Dashboard({
       setStudents(INITIAL_STUDENTS_DATA);
       setAllCollegeStudents(INITIAL_STUDENTS_DATA);
     }
-  }, [activeTab, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
+  }, [activeTab, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, debouncedSearchQuery]);
 
   useEffect(() => {
     loadData(0, activeTab);
@@ -147,28 +156,37 @@ function Dashboard({
     return students;
   }, [allCollegeStudents, students]);
 
-  // Full filtered dataset BEFORE pagination slice is applied
-  const filteredStudents = useMemo(() => {
-    const q = (searchQuery || '').toLowerCase().trim();
+  // Cohort dataset filtered ONLY by cohort attributes (Dept, Batch, Year, Section, Gender)
+  // Strictly independent of table search text and table pagination
+  const cohortStudents = useMemo(() => {
     return fullStudentsList.filter((st) => {
       const matchesDept = selectedDept === 'All' || st.department === selectedDept;
       const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
       const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
       const matchesSection = selectedSection === 'All' || (st.section && st.section.toUpperCase() === selectedSection.toUpperCase());
       const matchesGender = selectedGender === 'All' || st.gender === selectedGender;
-      const matchesSearch =
-        !q ||
+      return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender;
+    });
+  }, [fullStudentsList, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender]);
+
+  // Full filtered dataset with table search query applied (for search result counting)
+  const filteredStudents = useMemo(() => {
+    const q = (searchQuery || '').toLowerCase().trim();
+    if (!q) return cohortStudents;
+    return cohortStudents.filter((st) => {
+      return (
         st.name?.toLowerCase().includes(q) ||
         st.rollNo?.toLowerCase().includes(q) ||
         st.registerNumber?.toLowerCase().includes(q) ||
         (st.leetcode?.leetcodeId && st.leetcode.leetcodeId.toLowerCase().includes(q)) ||
-        (st.leetcodeId && st.leetcodeId.toLowerCase().includes(q));
-      return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender && matchesSearch;
+        (st.leetcodeId && st.leetcodeId.toLowerCase().includes(q))
+      );
     });
-  }, [fullStudentsList, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
+  }, [cohortStudents, searchQuery]);
 
+  // Top 3 Podium Toppers are calculated from the cohort dataset, NEVER from the search query or table page!
   const top3Rankers = useMemo(() => {
-    const listToRank = filteredStudents.length > 0 ? filteredStudents : fullStudentsList;
+    const listToRank = cohortStudents.length > 0 ? cohortStudents : fullStudentsList;
     return [...listToRank]
       .sort((a, b) => {
         if (['college', 'year', 'department', 'dept_year', 'class', 'overall'].includes(activeTab)) {
@@ -202,7 +220,7 @@ function Dashboard({
         return cb - ca;
       })
       .slice(0, 3);
-  }, [fullStudentsList, filteredStudents, activeTab]);
+  }, [cohortStudents, fullStudentsList, activeTab]);
 
   const handleUploadSuccess = async (newStudentsList, detectedType) => {
     const typeToSet = detectedType || newStudentsList?.detectedType || 'college';

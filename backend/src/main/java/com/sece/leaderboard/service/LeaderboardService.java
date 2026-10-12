@@ -202,12 +202,6 @@ public class LeaderboardService {
         List<Student> students = studentRepository.findAll().stream()
                 .filter(s -> (dept == null || "All".equalsIgnoreCase(dept) || dept.equalsIgnoreCase(s.getDepartment())))
                 .filter(s -> (batch == null || "All".equalsIgnoreCase(batch) || batch.equalsIgnoreCase(s.getBatch())))
-                .filter(s -> {
-                    if (query == null || query.isBlank()) return true;
-                    String q = query.trim().toLowerCase();
-                    return (s.getName() != null && s.getName().toLowerCase().contains(q))
-                            || (s.getRegisterNumber() != null && s.getRegisterNumber().toLowerCase().contains(q));
-                })
                 .collect(Collectors.toList());
 
         List<LeaderboardRowDto> rows = students.stream()
@@ -218,9 +212,19 @@ public class LeaderboardService {
         Comparator<LeaderboardRowDto> comparator = getPlatformComparator(viewType, sortBy);
         rows.sort(comparator);
 
-        // Assign ordinal rank for the filtered view
+        // Assign ordinal rank for the entire cohort BEFORE search query filtering
         for (int i = 0; i < rows.size(); i++) {
             rows.get(i).setRank(i + 1L);
+        }
+
+        // Apply search query filtering after true cohort rank is established
+        if (query != null && !query.isBlank()) {
+            String q = query.trim().toLowerCase();
+            rows = rows.stream().filter(s ->
+                (s.getName() != null && s.getName().toLowerCase().contains(q))
+                || (s.getRollNo() != null && s.getRollNo().toLowerCase().contains(q))
+                || (s.getLeetcodeId() != null && s.getLeetcodeId().toLowerCase().contains(q))
+            ).collect(Collectors.toList());
         }
 
         return rows;

@@ -86,28 +86,21 @@ export function LeaderboardTable({
   // Determine if this is a PostgreSQL Topper View tab
   const isTopperTab = ['college', 'year', 'department', 'dept_year', 'class'].includes(activeTab);
 
-  // Client-side filtering when working with in-memory array
-  const filteredStudents = useMemo(() => {
-    const q = (searchQuery || '').toLowerCase().trim();
+  // 1. Cohort-level filtering (Department, Batch, Academic Year, Section, Gender)
+  const cohortStudents = useMemo(() => {
     return students.filter(st => {
       const matchesDept = selectedDept === 'All' || st.department === selectedDept;
       const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
       const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
       const matchesSection = selectedSection === 'All' || (st.section && st.section.toUpperCase() === selectedSection.toUpperCase());
       const matchesGender = selectedGender === 'All' || st.gender === selectedGender;
-      const matchesSearch = !q ||
-        st.name?.toLowerCase().includes(q) ||
-        st.rollNo?.toLowerCase().includes(q) ||
-        st.registerNumber?.toLowerCase().includes(q) ||
-        (st.leetcode?.leetcodeId && st.leetcode.leetcodeId.toLowerCase().includes(q)) ||
-        (st.leetcodeId && st.leetcodeId.toLowerCase().includes(q));
-      return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender && matchesSearch;
+      return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender;
     });
-  }, [students, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender, searchQuery]);
+  }, [students, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender]);
 
-  // Sorting
-  const sortedStudents = useMemo(() => {
-    return [...filteredStudents].sort((a, b) => {
+  // 2. Sort the entire cohort and assign true cohort rank BEFORE search filtering
+  const rankedCohortStudents = useMemo(() => {
+    const sorted = [...cohortStudents].sort((a, b) => {
       if (activeTab === 'weekly') {
         if (sortBy === 'weekly_code') {
           const ca = a.weeklyAssessment?.codeScore ?? a.weeklyCodeScore ?? 0;
@@ -190,7 +183,28 @@ export function LeaderboardTable({
       }
       return cb - ca;
     });
-  }, [filteredStudents, activeTab, sortBy]);
+
+    // Assign true cohort rank so searching never re-ranks students as #1 toppers
+    return sorted.map((st, idx) => ({
+      ...st,
+      _cohortRank: st.rank != null ? Number(st.rank) : (idx + 1)
+    }));
+  }, [cohortStudents, activeTab, sortBy]);
+
+  // 3. Search query filters from the ranked cohort — preserving true cohort ranks!
+  const sortedStudents = useMemo(() => {
+    const q = (searchQuery || '').toLowerCase().trim();
+    if (!q) return rankedCohortStudents;
+    return rankedCohortStudents.filter(st => {
+      return (
+        st.name?.toLowerCase().includes(q) ||
+        st.rollNo?.toLowerCase().includes(q) ||
+        st.registerNumber?.toLowerCase().includes(q) ||
+        (st.leetcode?.leetcodeId && st.leetcode.leetcodeId.toLowerCase().includes(q)) ||
+        (st.leetcodeId && st.leetcodeId.toLowerCase().includes(q))
+      );
+    });
+  }, [rankedCohortStudents, searchQuery]);
 
   // Paginated window
   const isServerPaged = serverPage !== undefined && serverTotalPages !== undefined;
@@ -608,7 +622,7 @@ export function LeaderboardTable({
               </tr>
             ) : (
               paginatedStudents.map((st, index) => {
-                const computedRank = st.rank ?? (pageSize === 'All' ? index + 1 : (activePage - 1) * Number(pageSize) + index + 1);
+                const computedRank = st._cohortRank ?? st.rank ?? (pageSize === 'All' ? index + 1 : (activePage - 1) * Number(pageSize) + index + 1);
                 const rankNum = Number(computedRank);
 
                 const lcId = st.leetcode?.leetcodeId || st.leetcodeId || '';
