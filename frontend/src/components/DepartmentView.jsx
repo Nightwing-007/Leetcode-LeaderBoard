@@ -82,12 +82,17 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
       avgLabel = 'Avg Rating';
     }
 
+    const totalLcSolved = deptStudents.reduce((sum, s) => sum + (s.leetcode?.solvedTotal ?? s.lcSolvedTotal ?? 0), 0);
+    const totalPgpSolved = deptStudents.reduce((sum, s) => sum + (s.pgp?.programsSolved ?? s.pgpProgramsSolved ?? 0), 0);
+
     return {
       dept: deptName,
       count,
       topStudent,
       totalMetric,
       totalSolved: totalMetric || 0,
+      lcSolved: totalLcSolved,
+      pgpSolved: totalPgpSolved,
       avgScore,
       topScore,
       metricLabel,
@@ -101,6 +106,9 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
   // Sort departments by totalSolved descending for ranking
   const sortedDeptStats = [...deptStats].sort((a, b) => (b.totalSolved ?? 0) - (a.totalSolved ?? 0));
   const maxTotalSolved = Math.max(...deptStats.map(d => d.totalSolved ?? d.totalMetric ?? 0), 1);
+  const topSolvedDept = sortedDeptStats[0] || null;
+  const totalCollegeSolved = sortedDeptStats.reduce((sum, d) => sum + (d.totalSolved || 0), 0);
+  const totalCollegeCoders = sortedDeptStats.reduce((sum, d) => sum + (d.count || 0), 0);
 
   // Build rank map for medal display
   const deptRankMap = {};
@@ -236,42 +244,198 @@ export function DepartmentView({ students, onSelectStudent, activeTab = 'college
           alignItems: 'stretch'
         }}
       >
-        {/* Left Half: Existing Coding Problems Solved Bar Chart */}
+        {/* Left Half: Coding Problems Solved Bar Chart (Symmetric with Category Tiers) */}
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BarChart2 size={20} color="var(--sece-navy-600)" />
+              <BarChart2 size={20} color="var(--sece-gold-500)" />
               <span>
                 {isWeekly
                   ? 'Total Solved by Dept (Weekly Test)'
                   : (isPgp ? 'Total Solved by Dept (SkillRack / PGP)' : (isTopperTab ? 'Total Solved Coding Problems by Dept' : 'Total LeetCode Problems Solved'))}
               </span>
             </h3>
-            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-primary)', padding: '3px 8px', borderRadius: '6px' }}>
-              Sorted by Volume
-            </span>
+
+            {/* Legend */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem' }}>
+              {isTopperTab ? (
+                <>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#D97706', fontWeight: 800 }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#F59E0B' }} />
+                    LeetCode
+                  </span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#0284C7', fontWeight: 800 }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#0284C7' }} />
+                    SkillRack
+                  </span>
+                </>
+              ) : (
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: '#D97706', fontWeight: 800 }}>
+                  <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: '#F59E0B' }} />
+                  Volume Leader
+                </span>
+              )}
+            </div>
           </div>
 
+          {/* Top Solved Department Standout Callout Banner */}
+          {topSolvedDept && (topSolvedDept.totalSolved > 0 || topSolvedDept.totalMetric > 0) && (
+            <div
+              className="top-solved-banner"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255, 184, 0, 0.12) 0%, rgba(217, 155, 0, 0.05) 100%)',
+                border: '1.5px solid var(--sece-gold-500)',
+                borderRadius: '12px',
+                padding: '0.75rem 1rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '1.25rem',
+                flexWrap: 'wrap',
+                gap: '0.6rem'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(255, 184, 0, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Trophy size={20} color="#D99B00" />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--sece-gold-600)' }}>
+                    Department with Highest Problem Volume
+                  </div>
+                  <div style={{ fontSize: '1rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                    {topSolvedDept.dept} Department leads with {topSolvedDept.totalSolved.toLocaleString()} Solved
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#D97706', border: '1px solid rgba(245, 158, 11, 0.35)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                  🏆 {topSolvedDept.totalSolved.toLocaleString()} Problems
+                </span>
+                <span style={{ background: 'rgba(0, 86, 179, 0.12)', color: 'var(--sece-navy-500)', border: '1px solid rgba(0, 86, 179, 0.25)', padding: '3px 8px', borderRadius: '6px', fontSize: '0.75rem', fontWeight: 800 }}>
+                  👥 {topSolvedDept.count} Coders
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Department Breakdown Bar Comparison */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, justifyContent: 'space-around' }}>
             {sortedDeptStats.map(ds => {
               const currentVal = ds.totalSolved ?? ds.totalMetric ?? 0;
+              const isLeader = topSolvedDept && ds.dept === topSolvedDept.dept && currentVal > 0;
               const pct = Math.round((currentVal / maxTotalSolved) * 100);
+              const lcPct = Math.round(((ds.lcSolved || 0) / maxTotalSolved) * 100);
+              const pgpPct = Math.round(((ds.pgpSolved || 0) / maxTotalSolved) * 100);
+
               return (
                 <div key={ds.dept}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 700 }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', fontSize: '0.85rem', fontWeight: 700 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span className="dept-tag" style={{ fontSize: '0.75rem', padding: '1px 6px' }}>{ds.dept}</span>
-                    </span>
-                    <span style={{ color: 'var(--text-main)', fontFeatureSettings: '"tnum"' }}>
-                      {currentVal.toLocaleString()} {isWeekly ? 'problems' : 'solved'} ({pct}%)
-                    </span>
+                      {isLeader && (
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#D99B00', background: 'rgba(255, 184, 0, 0.15)', padding: '1px 5px', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <Trophy size={11} /> #1 Solved Dept
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
+                      {isTopperTab && (ds.lcSolved > 0 || ds.pgpSolved > 0) ? (
+                        <>
+                          <span style={{ color: '#B45309', fontWeight: 800 }}>
+                            {ds.lcSolved.toLocaleString()} LC
+                          </span>
+                          <span style={{ color: 'var(--text-muted)' }}>•</span>
+                          <span style={{ color: '#0284C7', fontWeight: 800 }}>
+                            {ds.pgpSolved.toLocaleString()} SR
+                          </span>
+                        </>
+                      ) : (
+                        <span style={{ color: '#B45309', fontWeight: 800, fontFeatureSettings: '"tnum"' }}>
+                          {currentVal.toLocaleString()} {isWeekly ? 'problems' : 'solved'}
+                        </span>
+                      )}
+                      <span style={{ color: 'var(--text-light)', fontSize: '0.75rem' }}>
+                        ({pct}% • {ds.count} coders)
+                      </span>
+                    </div>
                   </div>
-                  <div className="progress-bar-container">
-                    <div className="progress-bar-fill" style={{ width: `${pct}%` }} />
+
+                  {/* Dual Segmented Progress Bar (matching Category Tiers structure) */}
+                  <div
+                    style={{
+                      width: '100%',
+                      height: '12px',
+                      background: 'var(--bg-primary)',
+                      borderRadius: '6px',
+                      overflow: 'hidden',
+                      display: 'flex',
+                      position: 'relative',
+                      border: '1px solid var(--border-light)'
+                    }}
+                  >
+                    {isTopperTab && (ds.lcSolved > 0 || ds.pgpSolved > 0) ? (
+                      <>
+                        {/* LeetCode Bar (Gold) */}
+                        <div
+                          style={{
+                            width: `${lcPct}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
+                            transition: 'width 0.8s ease',
+                            borderRight: ds.pgpSolved > 0 ? '1px solid rgba(255,255,255,0.4)' : 'none'
+                          }}
+                          title={`${ds.dept}: ${ds.lcSolved.toLocaleString()} LeetCode Solved`}
+                        />
+                        {/* SkillRack Bar (Sky Blue) */}
+                        <div
+                          style={{
+                            width: `${pgpPct}%`,
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #0284C7 0%, #38BDF8 100%)',
+                            transition: 'width 0.8s ease'
+                          }}
+                          title={`${ds.dept}: ${ds.pgpSolved.toLocaleString()} SkillRack Solved`}
+                        />
+                      </>
+                    ) : (
+                      <div
+                        style={{
+                          width: `${pct}%`,
+                          height: '100%',
+                          background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 100%)',
+                          transition: 'width 0.8s ease'
+                        }}
+                        title={`${ds.dept}: ${currentVal.toLocaleString()} Solved`}
+                      />
+                    )}
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Footer Totals */}
+          <div
+            style={{
+              marginTop: '1.25rem',
+              paddingTop: '0.85rem',
+              borderTop: '1px solid var(--border-color)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '0.8rem',
+              color: 'var(--text-muted)',
+              flexWrap: 'wrap',
+              gap: '0.5rem'
+            }}
+          >
+            <span>Institutional Solved Pool</span>
+            <div style={{ display: 'flex', gap: '0.75rem', fontWeight: 800 }}>
+              <span style={{ color: '#B45309' }}>Total Solved: {totalCollegeSolved.toLocaleString()}</span>
+              <span style={{ color: '#0284C7' }}>Avg / Dept: {Math.round(totalCollegeSolved / Math.max(1, sortedDeptStats.length)).toLocaleString()}</span>
+            </div>
           </div>
         </div>
 
