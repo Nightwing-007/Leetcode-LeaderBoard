@@ -93,7 +93,7 @@ export function LeaderboardTable({
       const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
       const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
       const matchesSection = selectedSection === 'All' || (st.section && st.section.toUpperCase() === selectedSection.toUpperCase());
-      const matchesGender = selectedGender === 'All' || st.gender === selectedGender;
+      const matchesGender = selectedGender === 'All' || (st.gender && st.gender.toLowerCase() === selectedGender.toLowerCase());
       return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender;
     });
   }, [students, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender]);
@@ -113,16 +113,25 @@ export function LeaderboardTable({
           return mb - ma;
         }
         if (sortBy === 'weekly_rank') {
-          const ra = a.weeklyAssessment?.rank ?? a.weeklyRank ?? 999999;
-          const rb = b.weeklyAssessment?.rank ?? b.weeklyRank ?? 999999;
-          return ra - rb;
+          const getWeeklyRank = (st) => {
+            const r = st.weeklyAssessment?.rank ?? st.weeklyRank;
+            return (r && Number(r) > 0) ? Number(r) : 9999999;
+          };
+          const ra = getWeeklyRank(a);
+          const rb = getWeeklyRank(b);
+          if (ra !== rb) return ra - rb;
+          const sa = a.weeklyAssessment?.score ?? a.weeklyScore ?? 0;
+          const sb = b.weeklyAssessment?.score ?? b.weeklyScore ?? 0;
+          return sb - sa;
         }
         const sa = a.weeklyAssessment?.score ?? a.weeklyScore ?? 0;
         const sb = b.weeklyAssessment?.score ?? b.weeklyScore ?? 0;
         if (sb !== sa) return sb - sa;
-        const ra = a.weeklyAssessment?.rank ?? a.weeklyRank ?? 999999;
-        const rb = b.weeklyAssessment?.rank ?? b.weeklyRank ?? 999999;
-        return ra - rb;
+        const getWeeklyRank = (st) => {
+          const r = st.weeklyAssessment?.rank ?? st.weeklyRank;
+          return (r && Number(r) > 0) ? Number(r) : 9999999;
+        };
+        return getWeeklyRank(a) - getWeeklyRank(b);
       } else if (activeTab === 'leetcode') {
         if (sortBy === 'lc_solved') {
           const sa = a.leetcode?.solvedTotal ?? a.lcSolvedTotal ?? 0;
@@ -139,9 +148,20 @@ export function LeaderboardTable({
           const cb = b.leetcode?.contestAttended ?? b.lcContestsAttended ?? 0;
           return cb - ca;
         }
-        const ga = a.leetcode?.globalRank ?? a.lcGlobalRank ?? 999999;
-        const gb = b.leetcode?.globalRank ?? b.lcGlobalRank ?? 999999;
-        return ga - gb;
+        // Default LeetCode: Global rank ASC. Unranked (> 0 check) go to the bottom
+        const getLcRank = (st) => {
+          const r = st.leetcode?.globalRank ?? st.lcGlobalRank;
+          return (r && Number(r) > 0) ? Number(r) : 9999999;
+        };
+        const ga = getLcRank(a);
+        const gb = getLcRank(b);
+        if (ga !== gb) return ga - gb;
+        const ra = a.leetcode?.contestRating ?? a.lcContestRating ?? 0;
+        const rb = b.leetcode?.contestRating ?? b.lcContestRating ?? 0;
+        if (rb !== ra) return rb - ra;
+        const sa = a.leetcode?.solvedTotal ?? a.lcSolvedTotal ?? 0;
+        const sb = b.leetcode?.solvedTotal ?? b.lcSolvedTotal ?? 0;
+        return sb - sa;
       } else if (activeTab === 'pgp') {
         if (sortBy === 'pgp_solved') {
           const pa = a.pgp?.programsSolved ?? a.pgpProgramsSolved ?? 0;
@@ -154,9 +174,16 @@ export function LeaderboardTable({
           return db - da;
         }
         if (sortBy === 'pgp_rank') {
-          const ra = a.pgp?.skillrackRank ?? a.pgpSkillrackRank ?? 999999;
-          const rb = b.pgp?.skillrackRank ?? b.pgpSkillrackRank ?? 999999;
-          return ra - rb;
+          const getPgpRank = (st) => {
+            const r = st.pgp?.skillrackRank ?? st.pgpSkillrackRank;
+            return (r && Number(r) > 0) ? Number(r) : 9999999;
+          };
+          const ra = getPgpRank(a);
+          const rb = getPgpRank(b);
+          if (ra !== rb) return ra - rb;
+          const pa = a.pgp?.points ?? a.pgpPoints ?? 0;
+          const pb = b.pgp?.points ?? b.pgpPoints ?? 0;
+          return pb - pa;
         }
         const pa = a.pgp?.points ?? a.pgpPoints ?? 0;
         const pb = b.pgp?.points ?? b.pgpPoints ?? 0;

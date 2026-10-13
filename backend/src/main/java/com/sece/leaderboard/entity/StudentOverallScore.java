@@ -42,6 +42,9 @@ public class StudentOverallScore {
     @Column(name = "category")
     private String category;
 
+    @Column(name = "gender")
+    private String gender;
+
     public StudentOverallScore() {}
 
     public Long getStudentId() {
@@ -106,5 +109,13 @@ public class StudentOverallScore {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 }

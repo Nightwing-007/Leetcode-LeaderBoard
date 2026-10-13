@@ -13,6 +13,10 @@ import java.util.List;
 public class RankSpecifications {
 
     public static <T> Specification<T> filter(String department, Integer academicYear, String section, String searchQuery) {
+        return filter(department, academicYear, section, searchQuery, null);
+    }
+
+    public static <T> Specification<T> filter(String department, Integer academicYear, String section, String searchQuery, String gender) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -26,6 +30,10 @@ public class RankSpecifications {
 
             if (section != null && !section.isBlank() && !"All".equalsIgnoreCase(section)) {
                 predicates.add(cb.equal(cb.lower(root.get("section")), section.trim().toLowerCase()));
+            }
+
+            if (gender != null && !gender.isBlank() && !"All".equalsIgnoreCase(gender)) {
+                predicates.add(cb.equal(cb.lower(root.get("gender")), gender.trim().toLowerCase()));
             }
 
             if (searchQuery != null && !searchQuery.isBlank()) {

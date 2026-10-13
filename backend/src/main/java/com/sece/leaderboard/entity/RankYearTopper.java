@@ -45,6 +45,9 @@ public class RankYearTopper implements LeaderboardRankRecord {
     @Column(name = "category")
     private String category;
 
+    @Column(name = "gender")
+    private String gender;
+
     public RankYearTopper() {}
 
     @Override
@@ -126,5 +129,14 @@ public class RankYearTopper implements LeaderboardRankRecord {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    @Override
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 }

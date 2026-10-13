@@ -135,30 +135,11 @@ public class LeaderboardService {
     // =========================================================================
 
     public List<LeaderboardRowDto> getPodium(String viewType, String dept, String batch) {
-        Integer year = inferAcademicYearFromBatch(batch);
-        Pageable top3 = PageRequest.of(0, 3, Sort.by("rank").ascending());
+        return getPodium(viewType, dept, batch, "All");
+    }
 
-        if ("overall".equalsIgnoreCase(viewType) || "college".equalsIgnoreCase(viewType) || viewType == null) {
-            if (dept != null && !"All".equalsIgnoreCase(dept) && year != null) {
-                return rankDepartmentYearTopperRepository.findAll(
-                        RankSpecifications.filter(dept, year, null, null), top3
-                ).map(this::mapRankRecordToRowDto).getContent();
-            } else if (dept != null && !"All".equalsIgnoreCase(dept)) {
-                return rankDepartmentTopperRepository.findAll(
-                        RankSpecifications.filter(dept, null, null, null), top3
-                ).map(this::mapRankRecordToRowDto).getContent();
-            } else if (year != null) {
-                return rankYearTopperRepository.findAll(
-                        RankSpecifications.filter(null, year, null, null), top3
-                ).map(this::mapRankRecordToRowDto).getContent();
-            } else {
-                return rankCollegeTopperRepository.findAll(top3)
-                        .map(this::mapRankRecordToRowDto).getContent();
-            }
-        }
-
-        // Fallback for platform-specific podiums
-        List<LeaderboardRowDto> full = getLeaderboard(viewType, dept, batch, "All", "", "rank");
+    public List<LeaderboardRowDto> getPodium(String viewType, String dept, String batch, String gender) {
+        List<LeaderboardRowDto> full = getLeaderboard(viewType, dept, batch, gender, "", "rank");
         return full.stream().limit(3).collect(Collectors.toList());
     }
 
@@ -178,22 +159,22 @@ public class LeaderboardService {
 
         // A. Overall Tab: Delegated directly to PostgreSQL dynamic ranking views
         if ("overall".equalsIgnoreCase(viewType)) {
-            Pageable pageable = PageRequest.of(0, 500, Sort.by("rank").ascending());
+            Pageable pageable = PageRequest.of(0, 10000, Sort.by("rank").ascending());
             if (dept != null && !"All".equalsIgnoreCase(dept) && academicYear != null) {
                 return rankDepartmentYearTopperRepository.findAll(
-                        RankSpecifications.filter(dept, academicYear, null, query), pageable
+                        RankSpecifications.filter(dept, academicYear, null, query, gender), pageable
                 ).map(this::mapRankRecordToRowDto).getContent();
             } else if (dept != null && !"All".equalsIgnoreCase(dept)) {
                 return rankDepartmentTopperRepository.findAll(
-                        RankSpecifications.filter(dept, null, null, query), pageable
+                        RankSpecifications.filter(dept, null, null, query, gender), pageable
                 ).map(this::mapRankRecordToRowDto).getContent();
             } else if (academicYear != null) {
                 return rankYearTopperRepository.findAll(
-                        RankSpecifications.filter(null, academicYear, null, query), pageable
+                        RankSpecifications.filter(null, academicYear, null, query, gender), pageable
                 ).map(this::mapRankRecordToRowDto).getContent();
             } else {
                 return rankCollegeTopperRepository.findAll(
-                        RankSpecifications.filter(null, null, null, query), pageable
+                        RankSpecifications.filter(null, null, null, query, gender), pageable
                 ).map(this::mapRankRecordToRowDto).getContent();
             }
         }
@@ -201,7 +182,8 @@ public class LeaderboardService {
         // B. Platform-Specific Tabs (LeetCode, PGP, Weekly)
         List<Student> students = studentRepository.findAll().stream()
                 .filter(s -> (dept == null || "All".equalsIgnoreCase(dept) || dept.equalsIgnoreCase(s.getDepartment())))
-                .filter(s -> (batch == null || "All".equalsIgnoreCase(batch) || batch.equalsIgnoreCase(s.getBatch())))
+                .filter(s -> (batch == null || "All".equalsIgnoreCase(batch) || (s.getBatch() != null && s.getBatch().equalsIgnoreCase(batch)) || (academicYear != null && academicYear.equals(s.getAcademicYear()))))
+                .filter(s -> (gender == null || "All".equalsIgnoreCase(gender) || gender.equalsIgnoreCase(s.getGender())))
                 .collect(Collectors.toList());
 
         List<LeaderboardRowDto> rows = students.stream()
@@ -241,8 +223,20 @@ public class LeaderboardService {
             if ("contests".equalsIgnoreCase(sortBy) || "lc_contests".equalsIgnoreCase(sortBy)) {
                 return Comparator.comparing(LeaderboardRowDto::getLcContestsAttended, Comparator.nullsLast(Comparator.reverseOrder()));
             }
-            // Default: global rank ASC
-            return Comparator.comparing(LeaderboardRowDto::getLcGlobalRank, Comparator.nullsLast(Comparator.naturalOrder()));
+            // Default: global rank ASC, unranked students (> 0 check) sort to the bottom
+            return (a, b) -> {
+                Long rA = (a.getLcGlobalRank() != null && a.getLcGlobalRank() > 0) ? a.getLcGlobalRank() : Long.MAX_VALUE;
+                Long rB = (b.getLcGlobalRank() != null && b.getLcGlobalRank() > 0) ? b.getLcGlobalRank() : Long.MAX_VALUE;
+                int cmp = rA.compareTo(rB);
+                if (cmp != 0) return cmp;
+                BigDecimal ratingA = a.getLcContestRating() != null ? a.getLcContestRating() : BigDecimal.ZERO;
+                BigDecimal ratingB = b.getLcContestRating() != null ? b.getLcContestRating() : BigDecimal.ZERO;
+                int rCmp = ratingB.compareTo(ratingA);
+                if (rCmp != 0) return rCmp;
+                Integer sA = a.getLcSolvedTotal() != null ? a.getLcSolvedTotal() : 0;
+                Integer sB = b.getLcSolvedTotal() != null ? b.getLcSolvedTotal() : 0;
+                return sB.compareTo(sA);
+            };
         }
 
         if ("pgp".equalsIgnoreCase(viewType)) {
@@ -250,7 +244,15 @@ public class LeaderboardService {
                 return Comparator.comparing(LeaderboardRowDto::getPgpProgramsSolved, Comparator.nullsLast(Comparator.reverseOrder()));
             }
             if ("pgp_rank".equalsIgnoreCase(sortBy)) {
-                return Comparator.comparing(LeaderboardRowDto::getPgpSkillrackRank, Comparator.nullsLast(Comparator.naturalOrder()));
+                return (a, b) -> {
+                    Long rA = (a.getPgpSkillrackRank() != null && a.getPgpSkillrackRank() > 0) ? a.getPgpSkillrackRank() : Long.MAX_VALUE;
+                    Long rB = (b.getPgpSkillrackRank() != null && b.getPgpSkillrackRank() > 0) ? b.getPgpSkillrackRank() : Long.MAX_VALUE;
+                    int cmp = rA.compareTo(rB);
+                    if (cmp != 0) return cmp;
+                    Integer pA = a.getPgpPoints() != null ? a.getPgpPoints() : 0;
+                    Integer pB = b.getPgpPoints() != null ? b.getPgpPoints() : 0;
+                    return pB.compareTo(pA);
+                };
             }
             // Default: points DESC
             return Comparator.comparing(LeaderboardRowDto::getPgpPoints, Comparator.nullsLast(Comparator.reverseOrder()));
@@ -261,7 +263,15 @@ public class LeaderboardService {
                 return Comparator.comparing(LeaderboardRowDto::getWeeklyCodeScore, Comparator.nullsLast(Comparator.reverseOrder()));
             }
             if ("weekly_rank".equalsIgnoreCase(sortBy)) {
-                return Comparator.comparing(LeaderboardRowDto::getWeeklyRank, Comparator.nullsLast(Comparator.naturalOrder()));
+                return (a, b) -> {
+                    Integer rA = (a.getWeeklyRank() != null && a.getWeeklyRank() > 0) ? a.getWeeklyRank() : Integer.MAX_VALUE;
+                    Integer rB = (b.getWeeklyRank() != null && b.getWeeklyRank() > 0) ? b.getWeeklyRank() : Integer.MAX_VALUE;
+                    int cmp = rA.compareTo(rB);
+                    if (cmp != 0) return cmp;
+                    Integer sA = a.getWeeklyScore() != null ? a.getWeeklyScore() : 0;
+                    Integer sB = b.getWeeklyScore() != null ? b.getWeeklyScore() : 0;
+                    return sB.compareTo(sA);
+                };
             }
             return Comparator.comparing(LeaderboardRowDto::getWeeklyScore, Comparator.nullsLast(Comparator.reverseOrder()));
         }
@@ -283,6 +293,7 @@ public class LeaderboardService {
         dto.setAcademicYear(record.getAcademicYear());
         dto.setBatch(inferBatchFromAcademicYear(record.getAcademicYear()));
         dto.setSection(record.getSection());
+        dto.setGender(record.getGender());
 
         // Strictly pre-calculated overall score from PostgreSQL view
         dto.setOverallScore(record.getOverallScore());
@@ -307,6 +318,7 @@ public class LeaderboardService {
         dto.setAcademicYear(score.getAcademicYear());
         dto.setBatch(inferBatchFromAcademicYear(score.getAcademicYear()));
         dto.setSection(score.getSection());
+        dto.setGender(score.getGender());
         dto.setOverallScore(score.getOverallScore());
         dto.setCompositeScore(score.getOverallScore() != null ? score.getOverallScore().longValue() : 0L);
         dto.setCategory(score.getCategory());
@@ -324,6 +336,7 @@ public class LeaderboardService {
         dto.setBatch(s.getBatch());
         dto.setSection(s.getSection());
         dto.setAcademicYear(s.getAcademicYear());
+        dto.setGender(s.getGender());
 
         // Fetch overall score from view if available
         studentOverallScoreRepository.findById(s.getId()).ifPresent(score -> {
@@ -368,6 +381,7 @@ public class LeaderboardService {
                 .ifPresent(ass -> {
                     if (ass.getScore() != null) dto.setWeeklyScore(ass.getScore().intValue());
                     if (ass.getRating() != null) dto.setWeeklyCodeScore(ass.getRating().intValue());
+                    if (ass.getMcqScore() != null) dto.setWeeklyMcqScore(ass.getMcqScore().intValue());
                     if (ass.getRank() != null) dto.setWeeklyRank(ass.getRank().intValue());
                     dto.setWeeklyTestName(ass.getAssessmentName());
                 });

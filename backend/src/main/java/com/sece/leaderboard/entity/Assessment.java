@@ -35,6 +35,9 @@ public class Assessment {
     @Column(precision = 10, scale = 2)
     private BigDecimal rating;
 
+    @Column(name = "mcq_score", precision = 10, scale = 2)
+    private BigDecimal mcqScore;
+
     @Column(name = "rank")
     private Long rank;
 
@@ -51,6 +54,18 @@ public class Assessment {
         this.assessmentDate = assessmentDate;
         this.score = score;
         this.rating = rating;
+        this.mcqScore = BigDecimal.ZERO;
+        this.rank = rank;
+    }
+
+    public Assessment(Student student, CodingPlatform platform, String assessmentName, LocalDate assessmentDate, BigDecimal score, BigDecimal rating, BigDecimal mcqScore, Long rank) {
+        this.student = student;
+        this.platform = platform;
+        this.assessmentName = assessmentName;
+        this.assessmentDate = assessmentDate;
+        this.score = score;
+        this.rating = rating;
+        this.mcqScore = mcqScore;
         this.rank = rank;
     }
 
@@ -124,5 +139,13 @@ public class Assessment {
 
     public void setCreatedAt(ZonedDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public BigDecimal getMcqScore() {
+        return mcqScore;
+    }
+
+    public void setMcqScore(BigDecimal mcqScore) {
+        this.mcqScore = mcqScore;
     }
 }

@@ -75,6 +75,7 @@ public class StudentController {
         dto.setAcademicYear(s.getAcademicYear());
         dto.setSection(s.getSection());
         dto.setBatch(s.getBatch());
+        dto.setGender(s.getGender());
 
         // 2. Multi-level Rankings from PostgreSQL Read-Only Views
         StudentRankingInfoDto rankings = new StudentRankingInfoDto();
@@ -162,6 +163,7 @@ public class StudentController {
         latestAssessmentOpt.ifPresent(assessment -> {
             if (assessment.getScore() != null) dto.setWeeklyScore(assessment.getScore().intValue());
             if (assessment.getRating() != null) dto.setWeeklyCodeScore(assessment.getRating().intValue());
+            if (assessment.getMcqScore() != null) dto.setWeeklyMcqScore(assessment.getMcqScore().intValue());
             if (assessment.getRank() != null) dto.setWeeklyRank(assessment.getRank().intValue());
             dto.setWeeklyTestName(assessment.getAssessmentName());
         });

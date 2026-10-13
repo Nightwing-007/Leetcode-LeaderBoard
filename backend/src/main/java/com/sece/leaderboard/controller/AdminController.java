@@ -70,13 +70,16 @@ public class AdminController {
         }
 
         Student student = studentRepository.findByRegisterNumberIgnoreCase(regNo)
-                .orElse(new Student(regNo, request.getName(), academicYear, request.getDepartment(), request.getSection(), request.getBatch()));
+                .orElse(new Student(regNo, request.getName(), academicYear, request.getDepartment(), request.getSection(), request.getBatch(), request.getGender()));
 
         student.setName(request.getName());
         student.setDepartment(request.getDepartment());
         student.setBatch(request.getBatch());
         student.setSection(request.getSection());
         student.setAcademicYear(academicYear);
+        if (request.getGender() != null && !request.getGender().isBlank()) {
+            student.setGender(request.getGender());
+        }
         student = studentRepository.save(student);
 
         // Update LeetCode platform performance & account if provided

@@ -123,9 +123,15 @@ export function parseExcelData(file, existingStudents = []) {
             const dept = normalizeDept(rawDept);
             const subBatch = getVal(row, colMap.batch) || '';
             const batch = (subBatch && subBatch.includes("202")) ? subBatch : inferredBatch;
-            const gender = getVal(row, colMap.gender) || 'Male';
 
             let existing = studentMap.get(rollNo);
+
+            const rawGender = getVal(row, colMap.gender);
+            let gender = existing?.gender || 'Male';
+            if (rawGender) {
+              gender = (/^F|FEMALE|GIRL/i.test(String(rawGender).trim())) ? 'Female' : 'Male';
+            }
+
             if (!existing) {
               existing = {
                 id: rollNo,
@@ -213,6 +219,7 @@ export function parseExcelData(file, existingStudents = []) {
             if (rawDept && !existing.section) existing.section = rawDept;
             if (batch) existing.batch = batch;
             if (subBatch) existing.subBatch = subBatch;
+            if (rawGender) existing.gender = gender;
 
             // Update LeetCode fields
             if (colMap.leetcode_id !== undefined) existing.leetcode.leetcodeId = String(getVal(row, colMap.leetcode_id) || existing.leetcode.leetcodeId || '');
@@ -236,8 +243,11 @@ export function parseExcelData(file, existingStudents = []) {
             if (colMap.points !== undefined) existing.pgp.points = parseNum(getVal(row, colMap.points), existing.pgp.points || 0);
             if (colMap.skillrack_rank !== undefined) existing.pgp.skillrackRank = parseNum(getVal(row, colMap.skillrack_rank), existing.pgp.skillrackRank || 0);
 
-            // Update Weekly Assessment fields (from CandidateRankingDetails)
-            if (colMap.test_rank !== undefined) existing.weeklyAssessment.rank = parseNum(getVal(row, colMap.test_rank), existing.weeklyAssessment.rank || 0);
+            // Update Weekly Assessment fields (only from weekly assessment sheets)
+            const isWeeklySheet = colMap.test_score !== undefined || colMap.test_code_score !== undefined || colMap.test_mcq_score !== undefined;
+            if (isWeeklySheet && colMap.test_rank !== undefined) {
+              existing.weeklyAssessment.rank = parseNum(getVal(row, colMap.test_rank), existing.weeklyAssessment.rank || 0);
+            }
             if (colMap.test_score !== undefined) existing.weeklyAssessment.score = parseNum(getVal(row, colMap.test_score), existing.weeklyAssessment.score || 0);
             if (colMap.test_code_score !== undefined) existing.weeklyAssessment.codeScore = parseNum(getVal(row, colMap.test_code_score), existing.weeklyAssessment.codeScore || 0);
             if (colMap.test_mcq_score !== undefined) existing.weeklyAssessment.mcqScore = parseNum(getVal(row, colMap.test_mcq_score), existing.weeklyAssessment.mcqScore || 0);
@@ -259,12 +269,13 @@ export function parseExcelData(file, existingStudents = []) {
             existing.weeklyCodeScore = existing.weeklyAssessment.codeScore || 0;
             existing.weeklyMcqScore = existing.weeklyAssessment.mcqScore || 0;
 
-            // Calculate composite score safely
+            // Calculate composite score safely across active platforms
             const p = existing.pgp.points || 0;
             const w = existing.weeklyAssessment.score || 0;
             const l = existing.leetcode.solvedTotal || 0;
-            const rating = existing.leetcode.contestRating || 1500;
-            existing.compositeScore = p > 0 ? (p + w * 5) : (rating * 2 + l * 1.5 + w * 5);
+            const rating = existing.leetcode.contestRating || 0;
+            const activeRating = rating > 0 ? rating : (l * 5);
+            existing.compositeScore = Math.round(p * 0.4 + activeRating * 0.4 + w * 2);
 
             studentMap.set(rollNo, existing);
           }
@@ -299,7 +310,7 @@ function mapHeaders(headerRow) {
     else if (name.includes('COLLEGE')) map.college = idx;
 
     // Weekly Assessment Columns (CandidateRankingDetails.xlsx)
-    else if (name === '#' || name === 'S.NO' || name === 'SL NO' || name === 'SL.NO' || name === 'TEST RANK') map.test_rank = idx;
+    else if (name === '#' || name === 'TEST RANK' || name === 'WEEKLY RANK') map.test_rank = idx;
     else if (name === 'SCORE' || name.includes('TEST SCORE') || name === 'TOTAL SCORE') map.test_score = idx;
     else if (name.includes('(CODE)') || (name.includes('CODE') && name.includes('ASSESSMENT')) || (name.includes('DAILY ASSESSMENT') && name.includes('CODE'))) {
       map.test_code_score = idx;
@@ -350,7 +361,7 @@ function parseNum(val, fallback = 0) {
 
 export function normalizeDept(deptStr) {
   const d = String(deptStr || '').toUpperCase().trim();
-  if (d.includes('AIDS') || d.includes('ARTIFICIAL INT') || d.includes('DATA SCIENCE')) return 'AIDS';
+  if (d === 'AI' || d.startsWith('AI ') || d.includes('AIDS') || d.includes('ARTIFICIAL INT') || d.includes('DATA SCIENCE')) return 'AIDS';
   if (d.includes('AIML') || d.includes('MACHINE LEARNING')) return 'AIML';
   if (d.includes('CCE') || d.includes('COMMUNICATION')) return 'CCE';
   if (d.includes('CSBS') || d.includes('BUSINESS')) return 'CSBS';

@@ -89,7 +89,7 @@ public class ExcelImportService {
                 String testName = extractTestName(rawCodeHeader, sheetName);
                 String inferredBatch = inferBatchFromSheet(sheetName);
                 int inferredAcademicYear = determineAcademicYear(null, inferredBatch, sheetName);
-                List<Integer> degreAssessmentCols = findDegreAssessmentColumns(headerRow, colMap, sheetName);
+                List<Integer> degreAssessmentCols = findDegreAssessmentColumns(headerRow, colMap, sheetName, sheetPlatform);
 
                 for (int r = headerRowNum + 1; r <= sheet.getLastRowNum(); r++) {
                     Row row = sheet.getRow(r);
@@ -118,6 +118,9 @@ public class ExcelImportService {
                         String rawSection = getCleanStringValue(row, colMap.get("SECTION"));
                         String section = extractSection(rawDept, rawSection);
 
+                        String rawGender = getCleanStringValue(row, colMap.get("GENDER"));
+                        String gender = normalizeGender(rawGender);
+
                         String subBatch = getCleanStringValue(row, colMap.get("BATCH"));
                         String batch = (subBatch != null && subBatch.matches(".*202\\d.*")) ? subBatch : inferredBatch;
                         int academicYear = determineAcademicYear(getIntValue(row, colMap.get("ACADEMIC_YEAR"), null), batch, sheetName);
@@ -131,11 +134,14 @@ public class ExcelImportService {
                             student.setSection(section);
                             student.setBatch(batch);
                             student.setAcademicYear(academicYear);
+                            if (rawGender != null && !rawGender.isBlank()) {
+                                student.setGender(gender);
+                            }
                             student = studentRepository.save(student);
                             studentsUpdated++;
                         } else {
                             student = new Student(regNo, name != null && !name.isBlank() ? name.trim() : "Student " + regNo,
-                                    academicYear, department, section, batch);
+                                    academicYear, department, section, batch, gender);
                             student = studentRepository.save(student);
                             studentsInserted++;
                         }
@@ -244,11 +250,12 @@ public class ExcelImportService {
         }
 
         // --- C. WEEKLY ASSESSMENT (SKILLRACK ASSESSMENT) ---
-        if ("Weekly".equalsIgnoreCase(sheetPlatform) || colMap.containsKey("WEEKLY_CODE") || colMap.containsKey("WEEKLY_SCORE")) {
+        if ("Weekly".equalsIgnoreCase(sheetPlatform) || colMap.containsKey("WEEKLY_CODE") || colMap.containsKey("WEEKLY_SCORE") || colMap.containsKey("WEEKLY_MCQ")) {
             CodingPlatform platform = getOrCreatePlatform("SkillRack");
 
             BigDecimal score = getBigDecimalValue(row, colMap.get("WEEKLY_SCORE"), null);
             BigDecimal codeScore = getBigDecimalValue(row, colMap.get("WEEKLY_CODE"), null);
+            BigDecimal mcqScore = getBigDecimalValue(row, colMap.get("WEEKLY_MCQ"), null);
             Long rank = getLongValue(row, colMap.get("WEEKLY_RANK"), null);
 
             // Create assessment record
@@ -259,6 +266,7 @@ public class ExcelImportService {
                     LocalDate.now(),
                     score != null ? score : BigDecimal.ZERO,
                     codeScore != null ? codeScore : BigDecimal.ZERO,
+                    mcqScore != null ? mcqScore : BigDecimal.ZERO,
                     rank != null ? rank : 0L
             );
             assessmentRepository.save(assessment);
@@ -277,7 +285,11 @@ public class ExcelImportService {
         }
 
         // --- D. DEGRE.AI PLATFORM (AVERAGE OF VARIABLE WEEKLY ASSESSMENTS 2 TO 6) ---
-        if ("Degre.AI".equalsIgnoreCase(sheetPlatform) || (degreAssessmentCols != null && !degreAssessmentCols.isEmpty()) || colMap.containsKey("DEGRE_AVG") || colMap.containsKey("DEGRE_SCORE")) {
+        boolean isDegrePlatform = "Degre.AI".equalsIgnoreCase(sheetPlatform)
+                || colMap.containsKey("DEGRE_AVG")
+                || colMap.containsKey("DEGRE_SCORE")
+                || colMap.containsKey("DEGRE_ID");
+        if (isDegrePlatform) {
             CodingPlatform platform = getOrCreatePlatform("Degre.AI");
 
             if (colMap.containsKey("DEGRE_ID")) {
@@ -470,6 +482,10 @@ public class ExcelImportService {
             else if (upper.matches(".*(^YEAR$|^ACADEMIC\\s*YEAR$).*")) {
                 if (!map.containsKey("ACADEMIC_YEAR")) map.put("ACADEMIC_YEAR", c);
             }
+            // 7. Gender
+            else if (upper.matches(".*(^GENDER$|^SEX$).*")) {
+                if (!map.containsKey("GENDER")) map.put("GENDER", c);
+            }
 
             // --- Platform Specific Columns ---
             // LeetCode
@@ -508,14 +524,14 @@ public class ExcelImportService {
                 map.put("APTITUDE_SCORE", c);
             } else if (!hasWeeklyMarkers && (upper.equals("POINTS") || upper.contains("TOTAL POINTS") || upper.contains("PGP POINTS"))) {
                 map.put("TOTAL_POINTS", c);
-            } else if (!hasWeeklyMarkers && (upper.contains("SKILLRACK RANK") || upper.equals("#") || upper.equals("S.NO") || upper.equals("SL NO"))) {
+            } else if (!hasWeeklyMarkers && (upper.contains("SKILLRACK RANK") || upper.equals("PGP RANK"))) {
                 map.put("SKILLRACK_RANK", c);
             }
 
             // Weekly Assessment
-            else if (hasWeeklyMarkers && (upper.equals("#") || upper.equals("RANK") || upper.equals("S.NO") || upper.equals("SL NO") || upper.contains("TEST RANK"))) {
+            else if (hasWeeklyMarkers && (upper.equals("#") || upper.equals("RANK") || upper.contains("TEST RANK") || upper.contains("WEEKLY RANK"))) {
                 map.put("WEEKLY_RANK", c);
-            } else if (hasWeeklyMarkers && (upper.equals("SCORE") || upper.contains("TEST SCORE") || upper.equals("TOTAL SCORE"))) {
+            } else if (hasWeeklyMarkers && (upper.equals("SCORE") || upper.contains("TEST SCORE") || upper.contains("TOTAL SCORE"))) {
                 map.put("WEEKLY_SCORE", c);
             } else if (upper.contains("(CODE)") || upper.contains("DAILY ASSESSMENT")) {
                 map.put("WEEKLY_CODE", c);
@@ -554,9 +570,16 @@ public class ExcelImportService {
         return map;
     }
 
-    private List<Integer> findDegreAssessmentColumns(Row headerRow, Map<String, Integer> colMap, String sheetName) {
+    private List<Integer> findDegreAssessmentColumns(Row headerRow, Map<String, Integer> colMap, String sheetName, String sheetPlatform) {
         List<Integer> cols = new ArrayList<>();
         if (headerRow == null) return cols;
+
+        // Degre.AI assessment columns must only be processed if the sheet is actually a Degre.AI sheet
+        boolean isDegreSheet = "Degre.AI".equalsIgnoreCase(sheetPlatform)
+                || (sheetName != null && (sheetName.toLowerCase().contains("degre") || sheetName.toLowerCase().contains("degree")));
+        if (!isDegreSheet) {
+            return cols;
+        }
 
         Set<Integer> knownCols = new HashSet<>(colMap.values());
 
@@ -668,7 +691,7 @@ public class ExcelImportService {
     private String normalizeDepartment(String dept) {
         if (dept == null || dept.isBlank()) return "CSE";
         String d = dept.toUpperCase().trim();
-        if (d.contains("AIDS") || d.contains("ARTIFICIAL INT") || d.contains("DATA SCIENCE")) return "AIDS";
+        if (d.equals("AI") || d.startsWith("AI ") || d.contains("AIDS") || d.contains("ARTIFICIAL INT") || d.contains("DATA SCIENCE")) return "AIDS";
         if (d.contains("AIML") || d.contains("MACHINE LEARNING")) return "AIML";
         if (d.contains("CCE") || d.contains("COMMUNICATION ENG")) return "CCE";
         if (d.contains("CSBS") || d.contains("BUSINESS")) return "CSBS";
@@ -679,6 +702,15 @@ public class ExcelImportService {
         if (d.contains("IT") || d.contains("INFORMATION")) return "IT";
         if (d.contains("MECH") || d.contains("MECHANICAL")) return "MECH";
         return d.length() > 50 ? d.substring(0, 50) : d;
+    }
+
+    private String normalizeGender(String raw) {
+        if (raw == null || raw.isBlank()) return "Male";
+        String g = raw.trim().toUpperCase();
+        if (g.startsWith("F") || g.contains("FEMALE") || g.contains("GIRL") || g.contains("WOMEN") || g.contains("WOMAN")) {
+            return "Female";
+        }
+        return "Male";
     }
 
     private String extractSection(String rawDept, String rawSection) {

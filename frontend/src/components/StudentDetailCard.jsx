@@ -129,7 +129,7 @@ export function StudentDetailCard({ student, onClose, isAdmin = false, onEdit, o
               {loading && <span style={{ fontSize: '0.7rem', background: 'rgba(255,255,255,0.2)', padding: '2px 8px', borderRadius: '12px' }}>Syncing 360°...</span>}
             </div>
             <p style={{ fontSize: '0.8rem', color: '#FFC72C', fontFamily: 'var(--font-mono)', margin: '3px 0 0 0' }}>
-              Roll: {current.rollNo || current.registerNumber} • {current.department} {current.academicYear ? `• Year ${current.academicYear}` : ''} {current.section ? `• Sec ${current.section}` : ''} • ({current.batch || '2024-2028'})
+              Roll: {current.rollNo || current.registerNumber} • {current.department} {current.academicYear ? `• Year ${current.academicYear}` : ''} {current.section ? `• Sec ${current.section}` : ''} {current.gender ? `• ${current.gender}` : ''} • ({current.batch || '2024-2028'})
             </p>
           </div>
         </div>

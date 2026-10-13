@@ -164,7 +164,7 @@ function Dashboard({
       const matchesBatch = selectedBatch === 'All' || st.batch === selectedBatch;
       const matchesYear = selectedAcademicYear === 'All' || String(st.academicYear) === String(selectedAcademicYear);
       const matchesSection = selectedSection === 'All' || (st.section && st.section.toUpperCase() === selectedSection.toUpperCase());
-      const matchesGender = selectedGender === 'All' || st.gender === selectedGender;
+      const matchesGender = selectedGender === 'All' || (st.gender && st.gender.toLowerCase() === selectedGender.toLowerCase());
       return matchesDept && matchesBatch && matchesYear && matchesSection && matchesGender;
     });
   }, [fullStudentsList, selectedDept, selectedBatch, selectedAcademicYear, selectedSection, selectedGender]);
@@ -201,14 +201,26 @@ function Dashboard({
           const sa = a.weeklyAssessment?.score ?? a.weeklyScore ?? 0;
           const sb = b.weeklyAssessment?.score ?? b.weeklyScore ?? 0;
           if (sb !== sa) return sb - sa;
-          const ra = a.weeklyAssessment?.rank ?? a.weeklyRank ?? 999999;
-          const rb = b.weeklyAssessment?.rank ?? b.weeklyRank ?? 999999;
-          return ra - rb;
+          const getWeeklyRank = (st) => {
+            const r = st.weeklyAssessment?.rank ?? st.weeklyRank;
+            return (r && Number(r) > 0) ? Number(r) : 9999999;
+          };
+          return getWeeklyRank(a) - getWeeklyRank(b);
         }
         if (activeTab === 'leetcode') {
-          const ga = a.leetcode?.globalRank ?? a.lcGlobalRank ?? 999999;
-          const gb = b.leetcode?.globalRank ?? b.lcGlobalRank ?? 999999;
-          return ga - gb;
+          const getLcRank = (st) => {
+            const r = st.leetcode?.globalRank ?? st.lcGlobalRank;
+            return (r && Number(r) > 0) ? Number(r) : 9999999;
+          };
+          const ga = getLcRank(a);
+          const gb = getLcRank(b);
+          if (ga !== gb) return ga - gb;
+          const ra = a.leetcode?.contestRating ?? a.lcContestRating ?? 0;
+          const rb = b.leetcode?.contestRating ?? b.lcContestRating ?? 0;
+          if (rb !== ra) return rb - ra;
+          const sa = a.leetcode?.solvedTotal ?? a.lcSolvedTotal ?? 0;
+          const sb = b.leetcode?.solvedTotal ?? b.lcSolvedTotal ?? 0;
+          return sb - sa;
         }
         if (activeTab === 'pgp') {
           const pa = a.pgp?.points ?? a.pgpPoints ?? 0;

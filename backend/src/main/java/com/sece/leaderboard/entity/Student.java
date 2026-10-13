@@ -38,6 +38,9 @@ public class Student {
     @Column(nullable = false, length = 20)
     private String batch;
 
+    @Column(length = 20)
+    private String gender = "Male";
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private ZonedDateTime createdAt;
@@ -55,6 +58,17 @@ public class Student {
         this.department = department;
         this.section = section;
         this.batch = batch;
+        this.gender = "Male";
+    }
+
+    public Student(String registerNumber, String name, Integer academicYear, String department, String section, String batch, String gender) {
+        this.registerNumber = registerNumber;
+        this.name = name;
+        this.academicYear = academicYear;
+        this.department = department;
+        this.section = section;
+        this.batch = batch;
+        this.gender = gender != null ? gender : "Male";
     }
 
     public Long getId() {
@@ -127,5 +141,13 @@ public class Student {
 
     public void setUpdatedAt(ZonedDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getGender() {
+        return gender != null ? gender : "Male";
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
     }
 }

@@ -162,8 +162,9 @@ public class LeaderboardController {
     public ResponseEntity<List<LeaderboardRowDto>> getPodium(
             @RequestParam(required = false, defaultValue = "overall") String type,
             @RequestParam(required = false, defaultValue = "All") String dept,
-            @RequestParam(required = false, defaultValue = "All") String batch
+            @RequestParam(required = false, defaultValue = "All") String batch,
+            @RequestParam(required = false, defaultValue = "All") String gender
     ) {
-        return ResponseEntity.ok(leaderboardService.getPodium(type, dept, batch));
+        return ResponseEntity.ok(leaderboardService.getPodium(type, dept, batch, gender));
     }
 }

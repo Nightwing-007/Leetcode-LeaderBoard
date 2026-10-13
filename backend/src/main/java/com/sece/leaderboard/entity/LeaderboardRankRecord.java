@@ -15,4 +15,5 @@ public interface LeaderboardRankRecord {
     String getSection();
     BigDecimal getOverallScore();
     String getCategory();
+    String getGender();
 }

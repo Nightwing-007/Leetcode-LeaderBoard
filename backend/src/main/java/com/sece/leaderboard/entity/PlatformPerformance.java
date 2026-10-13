@@ -22,7 +22,7 @@ public class PlatformPerformance {
     @JoinColumn(name = "student_id", nullable = false)
     private Student student;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "platform_id", nullable = false)
     private CodingPlatform platform;
 
